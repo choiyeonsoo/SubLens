@@ -146,4 +146,31 @@ public class JwtTokenProvider {
                 null,
                 authorities);
     }
+
+    // 쿠키에서 리프레시 토큰 추출
+    public String resolveRefreshTokenFromCookie(HttpServletRequest request) {
+
+        if (request.getCookies() == null)
+            return null;
+
+        for (Cookie cookie : request.getCookies()) {
+            if ("refresh_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
+        return null;
+    }
+
+    // 토큰에서 userId 추출
+    public Long getUserIdFromToken(String token) {
+
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return Long.parseLong(claims.getSubject());
+    }
 }
