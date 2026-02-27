@@ -1,0 +1,69 @@
+package com.pkms.backend.auth.service;
+
+import java.net.http.HttpHeaders;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.pkms.backend.auth.dto.LoginRequest;
+import com.pkms.backend.auth.dto.LoginResponse;
+import com.pkms.backend.auth.dto.SignupRequest;
+import com.pkms.backend.auth.jwt.JwtTokenProvider;
+import com.pkms.backend.global.exception.BusinessException;
+import com.pkms.backend.global.exception.ErrorCode;
+import com.pkms.backend.user.Role;
+import com.pkms.backend.user.User;
+import com.pkms.backend.user.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    public void signup(SignupRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .name(request.getName())
+                .phoneNumber(request.getPhoneNumber())
+                .role(Role.USER)
+                .build();
+
+        userRepository.save(user);
+    }
+
+    public LoginResponse login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        String accessToken = jwtTokenProvider.createAccessToken(user);
+        String refreshToken = jwtTokenProvider.createRefreshToken(user);
+
+        // 🔹 Redis 저장 (24시간)
+        redisTemplate.opsForValue().set(
+                "refresh:" + user.getId(),
+                refreshToken,
+                24,
+                TimeUnit.HOURS);
+
+        return new LoginResponse(accessToken, refreshToken);
+    }
+}
