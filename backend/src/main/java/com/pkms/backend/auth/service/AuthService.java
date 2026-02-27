@@ -18,6 +18,9 @@ import com.pkms.backend.user.Role;
 import com.pkms.backend.user.User;
 import com.pkms.backend.user.repository.UserRepository;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -65,5 +68,40 @@ public class AuthService {
                 TimeUnit.HOURS);
 
         return new LoginResponse(accessToken, refreshToken);
+    }
+
+    // 리프레시 토큰 재발급
+    public LoginResponse reissue(String refreshToken) {
+
+        // 1️⃣ 유효성 검사
+        jwtTokenProvider.validateToken(refreshToken);
+
+        // 2️⃣ userId 추출 (Provider에게 맡김)
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+
+        // 3️⃣ Redis 확인
+        String storedRefresh = redisTemplate.opsForValue()
+                .get("refresh:" + userId);
+
+        if (storedRefresh == null || !storedRefresh.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        // 4️⃣ 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
+
+        // 5️⃣ 새 토큰 발급
+        String newAccess = jwtTokenProvider.createAccessToken(user);
+        String newRefresh = jwtTokenProvider.createRefreshToken(user);
+
+        // 6️⃣ Rotation
+        redisTemplate.opsForValue().set(
+                "refresh:" + userId,
+                newRefresh,
+                24,
+                TimeUnit.HOURS);
+
+        return new LoginResponse(newAccess, newRefresh);
     }
 }

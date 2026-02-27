@@ -1,4 +1,5 @@
 🐳 Docker 실행 가이드
+docker exec -it pkms-redis-1 redis-cli
 1️⃣ 사전 준비
 
 Docker Desktop 설치

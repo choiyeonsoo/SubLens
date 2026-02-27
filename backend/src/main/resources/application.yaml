@@ -19,5 +19,7 @@ spring:
       port: ${SPRING_REDIS_PORT:6379}
 jwt:
   secret: 0d5ad301f9af1047ba94371c2f281da7d93ab508c55de822834deae2892fb1b6
-  access-token-expiration: 1800000 # 30분
-  refresh-token-expiration: 86400000 # 24시간
+  #  access-token-expiration: 1800000 # 30분
+  #  refresh-token-expiration: 86400000 # 24시간
+  access-token-expiration: 10000 # 10초
+  refresh-token-expiration: 600000 # 10분

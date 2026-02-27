@@ -23,6 +23,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/auth/login")
+                || path.startsWith("/api/auth/signup")
+                || path.startsWith("/api/auth/reissue");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain)
@@ -32,13 +40,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null) {
             try {
-
+                jwtTokenProvider.validateToken(token);
                 Authentication authentication = jwtTokenProvider.getAuthentication(token);
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
 
             } catch (BusinessException e) {
 
+                SecurityContextHolder.clearContext();
                 response.setStatus(e.getErrorCode().getStatus().value());
                 response.setContentType("application/json;charset=UTF-8");
 
