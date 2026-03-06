@@ -1,10 +1,9 @@
 package com.pkms.backend.auth.service;
 
-import java.net.http.HttpHeaders;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +13,11 @@ import com.pkms.backend.auth.dto.SignupRequest;
 import com.pkms.backend.auth.jwt.JwtTokenProvider;
 import com.pkms.backend.global.exception.BusinessException;
 import com.pkms.backend.global.exception.ErrorCode;
+import com.pkms.backend.mail.EmailService;
 import com.pkms.backend.user.Role;
 import com.pkms.backend.user.User;
 import com.pkms.backend.user.repository.UserRepository;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -30,6 +27,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
+    private final EmailService emailService;
 
     public void signup(SignupRequest request) {
 
@@ -103,5 +101,59 @@ public class AuthService {
                 TimeUnit.HOURS);
 
         return new LoginResponse(newAccess, newRefresh);
+    }
+
+    public String validateResetToken(String token) {
+        String userId = redisTemplate.opsForValue().get("reset:token:" + token);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.INVALID_RESET_TOKEN);
+        }
+        return userId;
+    }
+
+    public void requestPasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElse(null);
+
+        if (user == null) {
+            return;
+        }
+
+        String userId = user.getId().toString();
+
+        // 기존 토큰이 있으면 무효화
+        String oldToken = redisTemplate.opsForValue().get("reset:user:" + userId);
+        if (oldToken != null) {
+            redisTemplate.delete("reset:token:" + oldToken);
+        }
+
+        String newToken = UUID.randomUUID().toString();
+
+        // 듀얼 키 저장 (10분 TTL)
+        redisTemplate.opsForValue().set(
+                "reset:user:" + userId, newToken, 10, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(
+                "reset:token:" + newToken, userId, 10, TimeUnit.MINUTES);
+
+        emailService.sendPasswordReset(user.getEmail(), user.getName(), newToken);
+    }
+
+    public void resetPassword(String token, String password) {
+
+        String userId = redisTemplate.opsForValue().get("reset:token:" + token);
+    
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.INVALID_RESET_TOKEN);
+        }
+    
+        User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
+    
+        user.setPassword(passwordEncoder.encode(password));
+    
+        userRepository.save(user);
+    
+        // 🔥 토큰 삭제 (중요)
+        redisTemplate.delete("reset:token:" + token);
     }
 }

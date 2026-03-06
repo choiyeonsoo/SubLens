@@ -1,5 +1,8 @@
 🐳 Docker 실행 가이드
+주요 명령어
 docker exec -it pkms-redis-1 redis-cli
+docker compose up -d --build
+docker compose down
 1️⃣ 사전 준비
 
 Docker Desktop 설치
