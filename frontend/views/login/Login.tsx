@@ -12,10 +12,8 @@ export default function LoginView() {
   const [password, setPassword] = useState("");
 
   const { mutate, isPending, isError, error } = useLogin();
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-
     mutate(
       { email, password },
       {
@@ -49,7 +47,11 @@ export default function LoginView() {
           required
         />
 
-        {isError && <p className="mb-4 text-sm text-red-500">로그인에 실패했습니다.</p>}
+        {isError && (
+          <p className="mb-4 text-sm text-red-500">
+            {(error as any)?.response?.data?.message ?? "로그인에 실패했습니다."}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -58,9 +60,16 @@ export default function LoginView() {
         >
           {isPending ? "로그인 중..." : "로그인"}
         </button>
-        <div className="mt-4 text-center text-sm">
-          계정이 없으신가요?{" "}
-          <Link href="/signup" className="font-semibold text-blue-600 hover:underline">
+        <div className="mt-6 flex justify-center text-sm text-gray-600">
+          <Link href="/find-id" className="px-2 hover:underline">
+            아이디 찾기
+          </Link>
+          <span className="border-l border-gray-300"></span>
+          <Link href="/reset-password" className="px-2 hover:underline">
+            비밀번호 찾기
+          </Link>
+          <span className="border-l border-gray-300"></span>
+          <Link href="/signup" className="px-2 font-semibold text-black hover:underline">
             회원가입
           </Link>
         </div>

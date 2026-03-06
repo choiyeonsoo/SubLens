@@ -9,10 +9,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pkms.backend.auth.dto.LoginRequest;
 import com.pkms.backend.auth.dto.LoginResponse;
+import com.pkms.backend.auth.dto.PasswordReset;
+import com.pkms.backend.auth.dto.PasswordResetRequest;
 import com.pkms.backend.auth.dto.SignupRequest;
 import com.pkms.backend.auth.jwt.JwtTokenProvider;
 import com.pkms.backend.auth.service.AuthService;
@@ -124,5 +127,28 @@ public class AuthController {
 
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
+    }
+
+    @GetMapping("/validate-token")
+    public ResponseEntity<?> validateResetToken(@RequestParam("token") String token) {
+        authService.validateResetToken(token);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/request-reset")
+    public ResponseEntity<?> requestPasswordReset(
+            @RequestBody PasswordResetRequest request
+    ) {
+
+        authService.requestPasswordReset(request.getEmail());
+
+        // 보안상 항상 성공 응답
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordReset request) {
+        authService.resetPassword(request.getToken(), request.getPassword());
+        return ResponseEntity.ok().build();
     }
 }

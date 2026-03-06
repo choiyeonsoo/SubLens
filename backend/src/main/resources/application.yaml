@@ -23,3 +23,6 @@ jwt:
   #  refresh-token-expiration: 86400000 # 24시간
   access-token-expiration: 10000 # 10초
   refresh-token-expiration: 600000 # 10분
+resend:
+  api:
+    key: ${RESEND_API_KEY:re_EF3JmSXy_KbxEjomRa49ayDDrC2Ed9iB9}

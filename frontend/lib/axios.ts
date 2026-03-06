@@ -22,8 +22,6 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    console.log("status:", error.response?.status);
-
     // 🔒 이미 재시도한 요청이면 그냥 실패
     if (originalRequest?._retry) {
       return Promise.reject(error);
@@ -51,12 +49,9 @@ api.interceptors.response.use(
 
         isRefreshing = false;
 
-        console.log("✅ Refresh 성공 → 원래 요청 재시도");
-
         return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
-
 
         await plainApi.post("/api/auth/logout").catch(() => {});
 
