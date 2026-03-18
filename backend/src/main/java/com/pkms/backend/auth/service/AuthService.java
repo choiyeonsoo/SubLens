@@ -37,7 +37,7 @@ public class AuthService {
 
         User user = User.builder()
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
                 .phoneNumber(request.getPhoneNumber())
                 .role(Role.USER)
@@ -51,7 +51,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
 
@@ -75,7 +75,7 @@ public class AuthService {
         jwtTokenProvider.validateToken(refreshToken);
 
         // 2️⃣ userId 추출 (Provider에게 맡김)
-        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+        UUID userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
 
         // 3️⃣ Redis 확인
         String storedRefresh = redisTemplate.opsForValue()
@@ -146,10 +146,10 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_RESET_TOKEN);
         }
     
-        User user = userRepository.findById(Long.valueOf(userId))
+        User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
     
-        user.setPassword(passwordEncoder.encode(password));
+        user.setPasswordHash(passwordEncoder.encode(password));
     
         userRepository.save(user);
     

@@ -4,76 +4,94 @@ import { useState } from "react";
 import { useLogin } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Layers } from "lucide-react";
 
 export default function LoginView() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const { mutate, isPending, isError, error } = useLogin();
-  const handleLogin = (e: React.FormEvent) => {
+
+  const handleLogin = (e: { preventDefault(): void }) => {
     e.preventDefault();
     mutate(
       { email, password },
-      {
-        onSuccess: () => {
-          router.push("/dashboard");
-        },
-      }
+      { onSuccess: () => router.push("/dashboard") }
     );
   };
 
+  const inputClass =
+    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition-colors focus:ring-2 focus:ring-violet-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <form onSubmit={handleLogin} className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-2xl font-bold">로그인</h1>
-
-        <input
-          type="email"
-          placeholder="이메일"
-          className="mb-4 w-full rounded border p-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        <input
-          type="password"
-          placeholder="비밀번호"
-          className="mb-4 w-full rounded border p-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        {isError && (
-          <p className="mb-4 text-sm text-red-500">
-            {(error as any)?.response?.data?.message ?? "로그인에 실패했습니다."}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full rounded bg-black py-2 text-white hover:bg-gray-800 disabled:opacity-50"
-        >
-          {isPending ? "로그인 중..." : "로그인"}
-        </button>
-        <div className="mt-6 flex justify-center text-sm text-gray-600">
-          <Link href="/find-id" className="px-2 hover:underline">
-            아이디 찾기
-          </Link>
-          <span className="border-l border-gray-300"></span>
-          <Link href="/reset-password" className="px-2 hover:underline">
-            비밀번호 찾기
-          </Link>
-          <span className="border-l border-gray-300"></span>
-          <Link href="/signup" className="px-2 font-semibold text-black hover:underline">
-            회원가입
-          </Link>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
+      <div className="w-full max-w-sm">
+        {/* 로고 */}
+        <div className="mb-8 flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Layers className="h-6 w-6 text-violet-600" />
+            <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+              SubLens
+            </span>
+          </div>
+          <p className="text-sm text-gray-400 dark:text-gray-500">구독을 한눈에 관리하세요</p>
         </div>
-      </form>
+
+        {/* 폼 카드 */}
+        <form
+          onSubmit={handleLogin}
+          className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+        >
+          <h1 className="mb-6 text-lg font-semibold text-gray-900 dark:text-white">로그인</h1>
+
+          <div className="flex flex-col gap-3">
+            <input
+              type="email"
+              placeholder="이메일"
+              className={inputClass}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="비밀번호"
+              className={inputClass}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          {isError && (
+            <p className="mt-3 text-sm text-red-500">
+              {(error as any)?.response?.data?.message ?? "로그인에 실패했습니다."}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="mt-5 w-full cursor-pointer rounded-lg bg-violet-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isPending ? "로그인 중..." : "로그인"}
+          </button>
+
+          <div className="mt-5 flex items-center justify-center gap-0 text-sm text-gray-400 dark:text-gray-500">
+            <Link href="/find-id" className="px-2 hover:text-gray-600 hover:underline dark:hover:text-gray-300">
+              아이디 찾기
+            </Link>
+            <span className="border-l border-gray-200 dark:border-gray-700 h-3" />
+            <Link href="/reset-password" className="px-2 hover:text-gray-600 hover:underline dark:hover:text-gray-300">
+              비밀번호 찾기
+            </Link>
+            <span className="border-l border-gray-200 dark:border-gray-700 h-3" />
+            <Link href="/signup" className="px-2 font-medium text-violet-600 hover:underline dark:text-violet-400">
+              회원가입
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

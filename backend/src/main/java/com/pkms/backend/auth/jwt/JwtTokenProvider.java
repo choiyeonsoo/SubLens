@@ -3,6 +3,7 @@ package com.pkms.backend.auth.jwt;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Value;
@@ -163,7 +164,7 @@ public class JwtTokenProvider {
     }
 
     // 토큰에서 userId 추출
-    public Long getUserIdFromToken(String token) {
+    public UUID getUserIdFromToken(String token) {
 
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
@@ -171,6 +172,6 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
 
-        return Long.parseLong(claims.getSubject());
+        return UUID.fromString(claims.getSubject());
     }
 }
