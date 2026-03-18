@@ -17,31 +17,31 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
-  backend:
-    build: ./backend
-    container_name: pkms-backend
-    environment:
-      - JWT_SECRET=${JWT_SECRET}
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/pkms
-      - SPRING_DATASOURCE_USERNAME=pkms
-      - SPRING_DATASOURCE_PASSWORD=pkms123
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - RESEND_API_KEY=re_EF3JmSXy_KbxEjomRa49ayDDrC2Ed9iB9
-    depends_on:
-      - postgres
-      - redis
-    ports:
-      - "8081:8080"
-  frontend:
-    build: ./frontend
-    container_name: pkms-frontend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8080
-    depends_on:
-      - backend
-    ports:
-      - "3000:3000"
+  # backend:
+  #   build: ./backend
+  #   container_name: pkms-backend
+  #   environment:
+  #     - JWT_SECRET=${JWT_SECRET}
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/pkms
+  #     - SPRING_DATASOURCE_USERNAME=pkms
+  #     - SPRING_DATASOURCE_PASSWORD=pkms123
+  #     - SPRING_REDIS_HOST=redis
+  #     - SPRING_REDIS_PORT=6379
+  #     - RESEND_API_KEY=re_EF3JmSXy_KbxEjomRa49ayDDrC2Ed9iB9
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   ports:
+  #     - "8081:8080"
+  # frontend:
+  #   build: ./frontend
+  #   container_name: pkms-frontend
+  #   environment:
+  #     - NEXT_PUBLIC_API_URL=http://backend:8080
+  #   depends_on:
+  #     - backend
+  #   ports:
+  #     - "3000:3000"
   nginx:
     image: nginx:alpine
     ports:

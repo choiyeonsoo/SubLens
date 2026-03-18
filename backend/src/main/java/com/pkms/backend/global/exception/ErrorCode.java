@@ -21,7 +21,13 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
 
     // PASSWORD RESET
-    INVALID_RESET_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않거나 만료된 재설정 토큰입니다.");
+    INVALID_RESET_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않거나 만료된 재설정 토큰입니다."),
+
+    // SUBSCRIPTION
+    SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "구독 정보를 찾을 수 없습니다."),
+    SUBSCRIPTION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 구독에 접근 권한이 없습니다."),
+    SUBSCRIPTION_LIMIT_EXCEEDED(HttpStatus.FORBIDDEN, "무료 플랜은 최대 5개의 구독만 등록할 수 있습니다."),
+    INVALID_BILLING_DATE(HttpStatus.BAD_REQUEST, "청구일은 오늘 이후여야 합니다.");
 
     private final HttpStatus status;
     private final String message;

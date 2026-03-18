@@ -1,6 +1,9 @@
 package com.pkms.backend.global.exception;
 
+import java.util.stream.Collectors;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +11,16 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<ApiResponse<?>> handleValidationException(
+            MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        ApiResponse<?> body = new ApiResponse<>(false, "INVALID_REQUEST", message, null);
+        return ResponseEntity.badRequest().body(body);
+    }
 
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ApiResponse<?>> handleBusinessException(

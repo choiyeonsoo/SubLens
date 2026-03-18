@@ -51,14 +51,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 response.setStatus(e.getErrorCode().getStatus().value());
                 response.setContentType("application/json;charset=UTF-8");
 
-                response.getWriter().write("""
-                        {
-                          "success": false,
-                          "code": "%s",
-                          "message": "%s",
-                          "data": null
-                        }
-                        """.formatted(
+                response.getWriter().write(String.format(
+                        "{\"success\":false,\"code\":\"%s\",\"message\":\"%s\",\"data\":null}",
                         e.getErrorCode().name(),
                         e.getErrorCode().getMessage()));
 
