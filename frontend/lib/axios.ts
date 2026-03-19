@@ -55,7 +55,10 @@ api.interceptors.response.use(
 
         await plainApi.post("/api/auth/logout").catch(() => {});
 
-        window.location.href = "/login";
+        // 이미 /login 이면 재이동 금지 (무한 루프 방지)
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
 
         return Promise.reject(refreshError);
       }

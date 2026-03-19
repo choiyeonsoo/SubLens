@@ -14,7 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!isLoading && !user) {
       router.replace("/login");
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (

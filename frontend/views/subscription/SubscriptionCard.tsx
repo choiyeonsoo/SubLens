@@ -2,7 +2,11 @@
 
 import { Pencil, Pause, Play, Trash2 } from "lucide-react";
 import type { SubscriptionResponse } from "@/features/subscription/types";
-import { useDeleteSubscription, useUpdateSubscriptionStatus } from "@/features/subscription/hooks";
+import {
+  useDeleteSubscription,
+  useSubscriptionServices,
+  useUpdateSubscriptionStatus,
+} from "@/features/subscription/hooks";
 
 interface Props {
   subscription: SubscriptionResponse;
@@ -59,7 +63,8 @@ function getInitial(name: string): string {
 export default function SubscriptionCard({ subscription, onEdit }: Props) {
   const deleteSubscription = useDeleteSubscription();
   const updateStatus = useUpdateSubscriptionStatus();
-
+  const { data: services = [], isLoading } = useSubscriptionServices();
+  const service = services.find((s) => s.name === subscription.serviceName);
   const badge = STATUS_BADGE[subscription.status] ?? STATUS_BADGE.ACTIVE;
   const bgColor = "#6d28d9";
 
@@ -78,13 +83,21 @@ export default function SubscriptionCard({ subscription, onEdit }: Props) {
       {/* 상단 */}
       <div className="flex items-start gap-3 p-4">
         {/* 서비스 아이콘 */}
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
-          style={{ backgroundColor: bgColor }}
-        >
-          {getInitial(subscription.serviceName)}
-        </div>
-
+        {service?.logoUrl ? (
+          <img
+            src={service.logoUrl}
+            alt={service.name}
+            className="h-5 w-5 shrink-0 rounded object-contain"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        ) : (
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
+            style={{ backgroundColor: bgColor }}
+          >
+            {getInitial(subscription.serviceName)}
+          </div>
+        )}
         {/* 서비스 정보 */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
