@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   CreditCard,
@@ -10,12 +10,16 @@ import {
   Bell,
   Layers,
   User,
+  LogOut,
+  Sun,
+  Moon,
+  BookOpen,
+  ChevronUp,
 } from "lucide-react";
-
-interface SidebarProps {
-  userName?: string;
-  subscriptionCount?: number;
-}
+import { useAuthStore } from "@/store/useAuthStore";
+import { useTheme } from "next-themes";
+import { useEffect, useRef, useState } from "react";
+import api from "@/lib/axios";
 
 const NAV_MENU = [
   { label: "대시보드", href: "/dashboard", icon: LayoutDashboard },
@@ -28,8 +32,32 @@ const NAV_TOOLS = [
   { label: "알림 설정", href: "/alert", icon: Bell },
 ];
 
-export default function Sidebar({ userName = "사용자", subscriptionCount = 0 }: SidebarProps) {
+export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, setUser } = useAuthStore();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
+
+  const handleLogout = async () => {
+    await api.post("/api/auth/logout").catch(() => {});
+    setUser(null);
+    router.push("/login");
+  };
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
@@ -87,21 +115,92 @@ export default function Sidebar({ userName = "사용자", subscriptionCount = 0 
         </div>
       </nav>
 
-      {/* 유저 정보 */}
-      <div className="border-t border-gray-100 px-3 py-4 dark:border-gray-800">
-        <div className="flex items-center gap-3 rounded-lg px-2 py-2">
+      {/* 유저 정보 + 팝업 메뉴 */}
+      <div
+        ref={menuRef}
+        className="relative border-t border-gray-100 px-3 py-4 dark:border-gray-800"
+      >
+        {/* 팝업 메뉴 */}
+        {menuOpen && (
+          <div className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            {/* 테마 전환 */}
+            {mounted && (
+              <button
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                {resolvedTheme === "dark" ? (
+                  <Sun className="h-4 w-4 shrink-0" />
+                ) : (
+                  <Moon className="h-4 w-4 shrink-0" />
+                )}
+                {resolvedTheme === "dark" ? "라이트 모드" : "다크 모드"}
+              </button>
+            )}
+
+            {/* Docs — ADMIN 전용 */}
+            {user?.role === "ADMIN" && (
+              <>
+                <Link
+                  href="/docs/SUBLENS_DB_SPEC.html"
+                  target="_blank"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <BookOpen className="h-4 w-4 shrink-0" />
+                  데이터베이스 명세서
+                </Link>
+                <Link
+                  href="/docs/SUBLENS_AUTH_SPEC.html"
+                  target="_blank"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <BookOpen className="h-4 w-4 shrink-0" />
+                  기술명세서
+                </Link>
+                <Link
+                  href="/docs/PLAN.html"
+                  target="_blank"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <BookOpen className="h-4 w-4 shrink-0" />
+                  기획서
+                </Link>
+              </>
+            )}
+
+            <div className="my-1 h-px bg-gray-100 dark:bg-gray-700" />
+
+            {/* 로그아웃 */}
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              로그아웃
+            </button>
+          </div>
+        )}
+
+        {/* 유저 버튼 */}
+        <button
+          onClick={() => setMenuOpen((prev) => !prev)}
+          className="flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900">
             <User className="h-4 w-4 text-violet-600 dark:text-violet-300" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 text-left">
             <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-              {userName}
-            </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              Free · {subscriptionCount}/5
+              {user?.name}
             </p>
           </div>
-        </div>
+          <ChevronUp
+            className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${menuOpen ? "" : "rotate-180"}`}
+          />
+        </button>
       </div>
     </aside>
   );

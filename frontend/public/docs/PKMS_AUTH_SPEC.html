@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SUBLENS 인증 시스템 기술 명세서</title>
+    <style>
+      @page { margin: 20mm; }
+      * { box-sizing: border-box; }
+      body {
+        font-family: "Malgun Gothic", "Segoe UI", sans-serif;
+        color: #1a1a1a;
+        line-height: 1.7;
+        max-width: 210mm;
+        margin: 0 auto;
+        padding: 20mm;
+        font-size: 11pt;
+      }
+      h1 { font-size: 22pt; border-bottom: 3px solid #111; padding-bottom: 8px; margin-top: 0; }
+      h2 { font-size: 15pt; color: #222; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 28px; page-break-after: avoid; }
+      h3 { font-size: 12pt; color: #333; margin-top: 18px; page-break-after: avoid; }
+      table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 10pt; }
+      th, td { border: 1px solid #bbb; padding: 6px 10px; text-align: left; }
+      th { background: #f0f0f0; font-weight: bold; white-space: nowrap; }
+      td code, p code, li code {
+        background: #f4f4f4; padding: 1px 5px; border-radius: 3px;
+        font-family: "Consolas", "Courier New", monospace; font-size: 10pt;
+      }
+      pre {
+        background: #f6f6f6; border: 1px solid #ddd; border-radius: 4px;
+        padding: 12px; font-size: 9.5pt; overflow-x: auto; line-height: 1.45;
+        page-break-inside: avoid;
+      }
+      pre code { background: none; padding: 0; }
+      .badge {
+        display: inline-block; padding: 2px 8px; border-radius: 3px;
+        font-size: 9pt; font-weight: bold; color: #fff; margin-right: 4px;
+      }
+      .get { background: #2e7d32; }
+      .post { background: #1565c0; }
+      .delete { background: #c62828; }
+      .meta { color: #777; font-size: 10pt; margin-bottom: 30px; }
+      .flow-box {
+        background: #fafafa; border: 1px solid #ddd; border-radius: 6px;
+        padding: 14px 18px; margin: 12px 0; font-size: 10pt;
+      }
+      .flow-box p { margin: 4px 0; }
+      ul { padding-left: 22px; }
+      .section-divider { border: none; border-top: 1px dashed #ccc; margin: 30px 0; }
+      .toc { background: #f9f9f9; border: 1px solid #ddd; padding: 16px 24px; border-radius: 6px; margin: 20px 0 30px; }
+      .toc ul { list-style: none; padding-left: 0; }
+      .toc li { padding: 3px 0; }
+      .toc a { text-decoration: none; color: #1565c0; }
+      @media print {
+        body { padding: 0; }
+        .toc { page-break-after: always; }
+        h2 { page-break-before: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SUBLENS 인증 시스템 기술 명세서</h1>
+    <p class="meta">
+      프로젝트: SUBLENS (SaaS 기반 구독 관리 플랫폼)<br />
+      작성일: 2026-03-19 &nbsp;|&nbsp; 버전: 1.1
+    </p>
+
+    <div class="toc">
+      <strong>목차</strong>
+      <ul>
+        <li>1. <a href="#s1">기술 스택</a></li>
+        <li>2. <a href="#s2">아키텍처 개요</a></li>
+        <li>3. <a href="#s3">데이터 모델 (인증 관련)</a></li>
+        <li>4. <a href="#s4">API 명세</a></li>
+        <li>&nbsp;&nbsp;4.1 회원가입 &nbsp;|&nbsp; 4.2 로그인 &nbsp;|&nbsp; 4.3 내 정보 조회</li>
+        <li>&nbsp;&nbsp;4.4 로그아웃 &nbsp;|&nbsp; 4.5 토큰 재발급 &nbsp;|&nbsp; 4.6~4.8 비밀번호 재설정</li>
+        <li>5. <a href="#s5">JWT 토큰 구조</a></li>
+        <li>6. <a href="#s6">Security Filter 흐름</a></li>
+        <li>7. <a href="#s7">Redis 키 설계</a></li>
+        <li>8. <a href="#s8">에러 코드 정의</a></li>
+        <li>9. <a href="#s9">비밀번호 재설정 전체 흐름</a></li>
+        <li>10. <a href="#s10">프론트엔드 API 연동</a></li>
+        <li>11. <a href="#s11">설정값 (application.yaml)</a></li>
+      </ul>
+    </div>
+
+    <!-- ================================================================== -->
+    <h2 id="s1">1. 기술 스택</h2>
+    <table>
+      <tr><th>구분</th><th>기술</th></tr>
+      <tr><td>Backend</td><td>Spring Boot 3.5, Spring Security 6.5, JPA (Hibernate 6.6), Java 21</td></tr>
+      <tr><td>인증</td><td>JWT (jjwt), HttpOnly Cookie, Refresh Token Rotation</td></tr>
+      <tr><td>DB</td><td>PostgreSQL 16</td></tr>
+      <tr><td>캐시/세션</td><td>Redis 7 (Lettuce)</td></tr>
+      <tr><td>메일</td><td>Resend API (REST)</td></tr>
+      <tr><td>Frontend</td><td>Next.js 16, React 19, TanStack Query v5, Axios, Zustand, Tailwind CSS</td></tr>
+      <tr><td>인프라</td><td>Docker Compose (postgres, redis, backend, frontend, nginx)</td></tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s2">2. 아키텍처 개요</h2>
+    <div class="flow-box">
+      <p><strong>[Frontend :3000]</strong> &nbsp;→&nbsp; Axios (withCredentials) &nbsp;→&nbsp; <strong>[Nginx :80]</strong> &nbsp;→&nbsp; <strong>[Backend :8080]</strong></p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;↕ HttpOnly Cookie (access_token, refresh_token)</p>
+      <p><strong>[Backend]</strong> &nbsp;→&nbsp; JPA → <strong>[PostgreSQL :5432]</strong></p>
+      <p><strong>[Backend]</strong> &nbsp;→&nbsp; Lettuce → <strong>[Redis :6379]</strong> (refresh token, reset token 저장)</p>
+      <p><strong>[Backend]</strong> &nbsp;→&nbsp; REST → <strong>[Resend API]</strong> (비밀번호 재설정 이메일)</p>
+    </div>
+    <ul>
+      <li>Stateless: 세션 미사용, JWT만으로 인증</li>
+      <li>CORS: <code>http://localhost:*</code> 패턴 허용, <code>allowCredentials=true</code></li>
+      <li>CSRF: 비활성화 (JWT + Cookie 기반)</li>
+      <li>전역 상태: Zustand <code>useAuthStore</code>가 사용자 정보 단일 소스</li>
+    </ul>
+
+    <!-- ================================================================== -->
+    <h2 id="s3">3. 데이터 모델 (인증 관련)</h2>
+    <h3>3.1 User 엔티티 (users 테이블)</h3>
+    <table>
+      <tr><th>필드</th><th>컬럼명</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+      <tr><td><code>id</code></td><td>id</td><td>UUID</td><td>PK, AUTO (UUID)</td><td>사용자 고유 ID</td></tr>
+      <tr><td><code>email</code></td><td>email</td><td>String</td><td>UNIQUE, NOT NULL</td><td>이메일 (로그인 ID)</td></tr>
+      <tr><td><code>passwordHash</code></td><td>password_hash</td><td>String</td><td>NOT NULL</td><td>BCrypt 해시 비밀번호</td></tr>
+      <tr><td><code>name</code></td><td>name</td><td>String</td><td>NOT NULL</td><td>이름</td></tr>
+      <tr><td><code>phoneNumber</code></td><td>phone_number</td><td>String</td><td>nullable</td><td>전화번호</td></tr>
+      <tr><td><code>role</code></td><td>role</td><td>Enum</td><td>NOT NULL</td><td>권한: USER / ADMIN</td></tr>
+      <tr><td><code>createdAt</code></td><td>created_at</td><td>LocalDateTime</td><td>NOT NULL, updatable=false</td><td>생성일시 (@PrePersist)</td></tr>
+      <tr><td><code>updatedAt</code></td><td>updated_at</td><td>LocalDateTime</td><td>nullable</td><td>수정일시 (@PreUpdate)</td></tr>
+    </table>
+
+    <h3>3.2 인증 관련 DTO</h3>
+    <table>
+      <tr><th>클래스</th><th>필드</th><th>용도</th></tr>
+      <tr><td><code>SignupRequest</code></td><td>email (@Email), password (@NotBlank), name (@NotBlank), phoneNumber (@NotBlank)</td><td>회원가입 요청</td></tr>
+      <tr><td><code>LoginRequest</code></td><td>email (@Email), password (@NotBlank)</td><td>로그인 요청</td></tr>
+      <tr><td><code>LoginResponse</code></td><td>accessToken, refreshToken</td><td>토큰 응답 (내부용, 쿠키로 전달)</td></tr>
+      <tr><td><code>UserResponse</code></td><td>id, email, name, role</td><td>/me 응답 DTO</td></tr>
+      <tr><td><code>PasswordResetRequest</code></td><td>email</td><td>비밀번호 재설정 요청</td></tr>
+      <tr><td><code>PasswordReset</code></td><td>token, password</td><td>비밀번호 재설정 실행</td></tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s4">4. API 명세</h2>
+    <p>Base Path: <code>/api/auth</code> &nbsp;|&nbsp; 모든 인증 관련 API는 <code>permitAll()</code></p>
+
+    <h3>4.1 회원가입</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge post">POST</span> <code>/api/auth/signup</code></td></tr>
+      <tr><td>Request Body</td><td><code>{ "email", "password", "name", "phoneNumber" }</code></td></tr>
+      <tr><td>성공 응답</td><td><code>200</code> "회원가입 완료" (String)</td></tr>
+      <tr><td>실패</td><td><code>409 DUPLICATE_EMAIL</code></td></tr>
+    </table>
+    <div class="flow-box">
+      <p>1. 이메일 중복 검사 → 2. BCrypt 해시 → 3. User 저장 (Role=USER)</p>
+    </div>
+
+    <h3>4.2 로그인</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge post">POST</span> <code>/api/auth/login</code></td></tr>
+      <tr><td>Request Body</td><td><code>{ "email", "password" }</code></td></tr>
+      <tr><td>성공 응답</td><td><code>200</code> (Body 없음, 쿠키에 토큰 세팅)</td></tr>
+      <tr><td>실패</td><td><code>404 EMAIL_NOT_FOUND</code>, <code>401 INVALID_PASSWORD</code></td></tr>
+    </table>
+    <div class="flow-box">
+      <p>1. 이메일로 사용자 조회 → 2. BCrypt 비밀번호 검증</p>
+      <p>3. Access Token + Refresh Token 생성 → 4. Redis에 Refresh Token 저장 (24h TTL)</p>
+      <p>5. HttpOnly Cookie 2개 세팅 (access_token: 1시간, refresh_token: 24시간)</p>
+    </div>
+
+    <h3>4.3 내 정보 조회</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge get">GET</span> <code>/api/auth/me</code></td></tr>
+      <tr><td>인증</td><td>필요 (Cookie의 access_token)</td></tr>
+      <tr><td>성공 응답</td><td><code>200</code> <code>{ "id", "email", "name", "role" }</code></td></tr>
+      <tr><td>실패</td><td><code>401</code> (토큰 없음), <code>404 USER_NOT_FOUND</code></td></tr>
+    </table>
+    <pre><code>// 응답 예시
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "user@example.com",
+    "name": "홍길동",
+    "role": "USER"
+  }
+}</code></pre>
+
+    <h3>4.4 로그아웃</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge post">POST</span> <code>/api/auth/logout</code></td></tr>
+      <tr><td>인증</td><td>선택 (없어도 쿠키 삭제 처리)</td></tr>
+      <tr><td>성공 응답</td><td><code>200</code></td></tr>
+    </table>
+    <div class="flow-box">
+      <p>1. authentication != null이면 Redis에서 <code>refresh:{userId}</code> 삭제</p>
+      <p>2. access_token, refresh_token 쿠키 MaxAge=0 으로 삭제</p>
+    </div>
+
+    <h3>4.5 토큰 재발급 (Reissue)</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge post">POST</span> <code>/api/auth/reissue</code></td></tr>
+      <tr><td>인증</td><td>Cookie의 refresh_token 필요</td></tr>
+      <tr><td>성공 응답</td><td><code>200</code> (새 토큰 쿠키 세팅)</td></tr>
+      <tr><td>실패</td><td><code>401 TOKEN_EXPIRED</code></td></tr>
+    </table>
+    <div class="flow-box">
+      <p>1. 쿠키에서 Refresh Token 추출 → 2. JWT 유효성 검사</p>
+      <p>3. Redis의 저장된 값과 비교 → 4. 새 Access + Refresh 발급</p>
+      <p>5. Redis 값 교체 (Rotation) → 6. 새 쿠키 세팅</p>
+    </div>
+
+    <hr class="section-divider" />
+
+    <h3>4.6 비밀번호 재설정 요청</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge post">POST</span> <code>/api/auth/request-reset</code></td></tr>
+      <tr><td>Request Body</td><td><code>{ "email" }</code></td></tr>
+      <tr><td>응답</td><td>항상 <code>200</code> (보안상 이메일 존재 여부 노출 안 함)</td></tr>
+    </table>
+    <div class="flow-box">
+      <p>1. 이메일로 사용자 조회 (없으면 조용히 return)</p>
+      <p>2. 기존 토큰이 있으면 무효화: <code>reset:user:{userId}</code> 조회 → <code>reset:token:{기존토큰}</code> 삭제</p>
+      <p>3. 새 UUID 토큰 생성</p>
+      <p>4. 듀얼 키 Redis 저장 (TTL 10분):</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;<code>reset:user:{userId}</code> → <code>newToken</code></p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;<code>reset:token:{newToken}</code> → <code>userId</code></p>
+      <p>5. Resend API로 재설정 이메일 발송 (링크: <code>/reset-password?token=xxx</code>)</p>
+    </div>
+
+    <h3>4.7 재설정 토큰 검증</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge get">GET</span> <code>/api/auth/validate-token?token={token}</code></td></tr>
+      <tr><td>성공 응답</td><td><code>200</code></td></tr>
+      <tr><td>실패</td><td><code>400 INVALID_RESET_TOKEN</code></td></tr>
+    </table>
+    <div class="flow-box">
+      <p>Redis에서 <code>reset:token:{token}</code> 조회 → 없으면 예외</p>
+    </div>
+
+    <h3>4.8 비밀번호 재설정 실행</h3>
+    <table>
+      <tr><th>항목</th><th>내용</th></tr>
+      <tr><td>Endpoint</td><td><span class="badge post">POST</span> <code>/api/auth/reset-password</code></td></tr>
+      <tr><td>Request Body</td><td><code>{ "token", "password" }</code></td></tr>
+      <tr><td>성공 응답</td><td><code>200</code></td></tr>
+      <tr><td>실패</td><td><code>400 INVALID_RESET_TOKEN</code>, <code>404 EMAIL_NOT_FOUND</code></td></tr>
+    </table>
+    <div class="flow-box">
+      <p>1. <code>reset:token:{token}</code>에서 userId 조회 → 2. 사용자 조회</p>
+      <p>3. 새 비밀번호 BCrypt 해시 후 저장 → 4. Redis 토큰 삭제 (일회성 보장)</p>
+    </div>
+
+    <!-- ================================================================== -->
+    <h2 id="s5">5. JWT 토큰 구조</h2>
+    <h3>5.1 Access Token</h3>
+    <table>
+      <tr><th>Claim</th><th>값</th></tr>
+      <tr><td><code>sub</code></td><td>userId (UUID → String)</td></tr>
+      <tr><td><code>role</code></td><td>"USER" 또는 "ADMIN"</td></tr>
+      <tr><td><code>iat</code></td><td>발급 시간</td></tr>
+      <tr><td><code>exp</code></td><td>발급 + 3,600,000ms (1시간)</td></tr>
+    </table>
+
+    <h3>5.2 Refresh Token</h3>
+    <table>
+      <tr><th>Claim</th><th>값</th></tr>
+      <tr><td><code>sub</code></td><td>userId (UUID)</td></tr>
+      <tr><td><code>iat</code></td><td>발급 시간</td></tr>
+      <tr><td><code>exp</code></td><td>발급 + 86,400,000ms (24시간)</td></tr>
+    </table>
+    <p>서명: HMAC-SHA256 (<code>jwt.secret</code> 기반)</p>
+
+    <h3>5.3 Cookie 설정</h3>
+    <table>
+      <tr><th>쿠키명</th><th>HttpOnly</th><th>Secure</th><th>Path</th><th>MaxAge</th></tr>
+      <tr><td><code>access_token</code></td><td>true</td><td>false (개발)</td><td>/</td><td>3,600초 (1시간)</td></tr>
+      <tr><td><code>refresh_token</code></td><td>true</td><td>false (개발)</td><td>/</td><td>86,400초 (24시간)</td></tr>
+    </table>
+    <p>※ MaxAge는 <code>application.yaml</code>의 expiration 값에서 자동 계산됩니다.</p>
+
+    <!-- ================================================================== -->
+    <h2 id="s6">6. Security Filter 흐름</h2>
+    <pre><code>요청 수신
+  │
+  ├─ shouldNotFilter 체크 (/login, /signup, /reissue → 필터 Skip)
+  │
+  ├─ 쿠키에서 access_token 추출
+  │    ├─ null → 그대로 필터 통과 (미인증 상태)
+  │    └─ 존재 →
+  │         ├─ validateToken() 성공 → getAuthentication() → SecurityContext 저장
+  │         └─ validateToken() 실패 → SecurityContext 초기화, JSON 에러 응답 반환
+  │
+  └─ Controller 진입</code></pre>
+
+    <h3>6.1 Frontend 인증 초기화 흐름 (AuthProvider)</h3>
+    <div class="flow-box">
+      <p>페이지 로드 시 <code>AuthProvider</code>가 <code>plainApi</code> (인터셉터 없음)로 <code>/api/auth/me</code> 호출</p>
+      <p>→ 성공: Zustand store에 user 세팅</p>
+      <p>→ 401: <code>/api/auth/reissue</code> 수동 호출 → 성공 시 다시 <code>/api/auth/me</code> 호출</p>
+      <p>→ reissue 실패: user = null (비로그인 상태)</p>
+    </div>
+    <p>※ <code>plainApi</code>를 사용하는 이유: <code>api</code> (401 인터셉터 있음)로 호출하면 reissue 실패 시 <code>window.location.href = "/login"</code>이 실행되어 무한 리다이렉트 루프 발생</p>
+
+    <!-- ================================================================== -->
+    <h2 id="s7">7. Redis 키 설계</h2>
+    <table>
+      <tr><th>키 패턴</th><th>값</th><th>TTL</th><th>용도</th></tr>
+      <tr><td><code>refresh:{userId}</code></td><td>Refresh Token (JWT)</td><td>24시간</td><td>로그인 세션 유지, Rotation 검증</td></tr>
+      <tr><td><code>reset:user:{userId}</code></td><td>Reset Token (UUID)</td><td>10분</td><td>유저당 1개 보장, 기존 토큰 무효화용</td></tr>
+      <tr><td><code>reset:token:{token}</code></td><td>userId</td><td>10분</td><td>URL 토큰 → 유저 역방향 조회</td></tr>
+    </table>
+    <p><strong>듀얼 키 전략</strong>: 새 재설정 요청 시 <code>reset:user:{userId}</code>에서 기존 토큰을 찾아 <code>reset:token:{기존토큰}</code>을 삭제 후, 새 토큰 쌍을 저장합니다. 유저당 유효한 재설정 토큰은 항상 1개만 존재합니다.</p>
+
+    <!-- ================================================================== -->
+    <h2 id="s8">8. 에러 코드 정의</h2>
+    <table>
+      <tr><th>코드</th><th>HTTP Status</th><th>메시지</th></tr>
+      <tr><td>INTERNAL_SERVER_ERROR</td><td>500</td><td>서버 내부 오류</td></tr>
+      <tr><td>INVALID_REQUEST</td><td>400</td><td>잘못된 요청</td></tr>
+      <tr><td>TOKEN_EXPIRED</td><td>401</td><td>토큰이 만료되었습니다.</td></tr>
+      <tr><td>INVALID_SIGNATURE</td><td>401</td><td>토큰 서명이 유효하지 않습니다.</td></tr>
+      <tr><td>MALFORMED_TOKEN</td><td>400</td><td>토큰 형식이 올바르지 않습니다.</td></tr>
+      <tr><td>UNSUPPORTED_TOKEN</td><td>400</td><td>지원되지 않는 토큰입니다.</td></tr>
+      <tr><td>EMPTY_TOKEN</td><td>400</td><td>토큰이 존재하지 않습니다.</td></tr>
+      <tr><td>USER_NOT_FOUND</td><td>404</td><td>존재하지 않는 사용자입니다.</td></tr>
+      <tr><td>EMAIL_NOT_FOUND</td><td>404</td><td>존재하지 않는 이메일입니다.</td></tr>
+      <tr><td>INVALID_PASSWORD</td><td>401</td><td>비밀번호가 일치하지 않습니다.</td></tr>
+      <tr><td>DUPLICATE_EMAIL</td><td>409</td><td>이미 존재하는 이메일입니다.</td></tr>
+      <tr><td>INVALID_RESET_TOKEN</td><td>400</td><td>유효하지 않거나 만료된 재설정 토큰입니다.</td></tr>
+      <tr><td>SUBSCRIPTION_NOT_FOUND</td><td>404</td><td>구독 정보를 찾을 수 없습니다.</td></tr>
+      <tr><td>SUBSCRIPTION_ACCESS_DENIED</td><td>403</td><td>해당 구독에 접근 권한이 없습니다.</td></tr>
+      <tr><td>SUBSCRIPTION_LIMIT_EXCEEDED</td><td>403</td><td>무료 플랜은 최대 5개의 구독만 등록할 수 있습니다.</td></tr>
+      <tr><td>INVALID_BILLING_DATE</td><td>400</td><td>청구일은 오늘 이후여야 합니다.</td></tr>
+    </table>
+
+    <h3>에러 응답 형식</h3>
+    <pre><code>{
+  "success": false,
+  "code": "TOKEN_EXPIRED",
+  "message": "토큰이 만료되었습니다.",
+  "data": null
+}</code></pre>
+
+    <!-- ================================================================== -->
+    <h2 id="s9">9. 비밀번호 재설정 전체 흐름</h2>
+    <pre><code>[사용자]                [Frontend]              [Backend]               [Redis]           [Resend]
+  │                        │                       │                      │                  │
+  │ 이메일 입력 ───────────▶│                       │                      │                  │
+  │                        │ POST /request-reset ──▶│                      │                  │
+  │                        │                       │ 기존 토큰 조회 ──────▶│                  │
+  │                        │                       │◀── 기존 토큰 반환 ────│                  │
+  │                        │                       │ 기존 토큰 삭제 ──────▶│                  │
+  │                        │                       │ 새 듀얼 키 저장 ─────▶│                  │
+  │                        │                       │ 메일 발송 ────────────┼─────────────────▶│
+  │                        │◀── 200 ───────────────│                      │                  │
+  │◀── "메일 발송됨" ───────│                       │                      │                  │
+  │                        │                       │                      │                  │
+  │ 이메일 링크 클릭 ──────▶│                       │                      │                  │
+  │                        │ GET /validate-token ──▶│                      │                  │
+  │                        │                       │ reset:token 조회 ───▶│                  │
+  │                        │◀── 200 or 400 ────────│                      │                  │
+  │                        │                       │                      │                  │
+  │ 새 비밀번호 입력 ──────▶│                       │                      │                  │
+  │                        │ POST /reset-password ─▶│                      │                  │
+  │                        │                       │ 토큰→userId 조회 ───▶│                  │
+  │                        │                       │ 비밀번호 변경 (BCrypt)│                  │
+  │                        │                       │ 토큰 삭제 ───────────▶│                  │
+  │                        │◀── 200 ───────────────│                      │                  │
+  │◀── "변경 완료" ─────────│                       │                      │                  │</code></pre>
+
+    <!-- ================================================================== -->
+    <h2 id="s10">10. 프론트엔드 API 연동</h2>
+    <h3>10.1 Axios 인스턴스 (lib/axios.ts)</h3>
+    <table>
+      <tr><th>인스턴스</th><th>용도</th><th>401 인터셉터</th></tr>
+      <tr><td><code>api</code></td><td>일반 API 호출 (구독 등)</td><td>있음 — 자동 reissue 후 재시도, 실패 시 /login 리다이렉트</td></tr>
+      <tr><td><code>plainApi</code></td><td>인증 엔드포인트 전용</td><td>없음 — AuthProvider, 로그인/회원가입에서 사용</td></tr>
+    </table>
+
+    <h3>10.2 Zustand Auth Store (store/useAuthStore.ts)</h3>
+    <pre><code>interface AuthStore {
+  user: { id: string; email: string; name: string; role: "USER" | "ADMIN" } | null;
+  isLoading: boolean;
+  setUser: (user) => void;
+  setLoading: (loading) => void;
+}</code></pre>
+
+    <h3>10.3 인증 API 함수 (features/auth/api.ts)</h3>
+    <table>
+      <tr><th>함수</th><th>HTTP</th><th>엔드포인트</th></tr>
+      <tr><td><code>login(email, password)</code></td><td>POST</td><td>/api/auth/login</td></tr>
+      <tr><td><code>signup(email, password, name, phoneNumber)</code></td><td>POST</td><td>/api/auth/signup</td></tr>
+      <tr><td><code>requestPasswordReset(email)</code></td><td>POST</td><td>/api/auth/request-reset</td></tr>
+      <tr><td><code>validateToken(token)</code></td><td>GET</td><td>/api/auth/validate-token?token=</td></tr>
+      <tr><td><code>resetPassword(token, password)</code></td><td>POST</td><td>/api/auth/reset-password</td></tr>
+    </table>
+
+    <h3>10.4 React Query Hooks (features/auth/hooks.ts)</h3>
+    <table>
+      <tr><th>Hook</th><th>종류</th><th>용도</th></tr>
+      <tr><td><code>useLogin()</code></td><td>useMutation</td><td>로그인 → 성공 시 /me 호출하여 store 세팅</td></tr>
+      <tr><td><code>useSignup()</code></td><td>useMutation</td><td>회원가입</td></tr>
+      <tr><td><code>useRequestPasswordReset()</code></td><td>useMutation</td><td>재설정 이메일 요청</td></tr>
+      <tr><td><code>useValidateToken(token)</code></td><td>useQuery</td><td>토큰 검증 (자동 실행)</td></tr>
+      <tr><td><code>useResetPassword()</code></td><td>useMutation</td><td>비밀번호 변경 실행</td></tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s11">11. 설정값 (application.yaml)</h2>
+    <table>
+      <tr><th>키</th><th>현재값</th><th>비고</th></tr>
+      <tr><td><code>jwt.access-token-expiration</code></td><td>3,600,000ms (1시간)</td><td>Cookie MaxAge 자동 계산</td></tr>
+      <tr><td><code>jwt.refresh-token-expiration</code></td><td>86,400,000ms (24시간)</td><td>Cookie MaxAge 자동 계산</td></tr>
+      <tr><td><code>spring.datasource.url</code></td><td>jdbc:postgresql://localhost:5432/sublens</td><td>Docker: SPRING_DATASOURCE_URL</td></tr>
+      <tr><td><code>spring.data.redis.host</code></td><td>localhost</td><td>Docker: SPRING_REDIS_HOST</td></tr>
+      <tr><td><code>spring.data.redis.port</code></td><td>6379</td><td>Docker: SPRING_REDIS_PORT</td></tr>
+      <tr><td><code>spring.jpa.hibernate.ddl-auto</code></td><td>update</td><td>컬럼 추가는 자동, 삭제는 수동 필요</td></tr>
+      <tr><td><code>resend.api.key</code></td><td>환경변수 (RESEND_API_KEY)</td><td>Resend 메일 API 키</td></tr>
+    </table>
+
+    <hr style="margin-top: 40px" />
+    <p style="text-align: center; color: #999; font-size: 9pt">
+      SUBLENS Auth Specification v1.1 &nbsp;|&nbsp; 2026-03-19
+    </p>
+  </body>
+</html>

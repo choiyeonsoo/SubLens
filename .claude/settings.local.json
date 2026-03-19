@@ -2,11 +2,27 @@
   "permissions": {
     "allow": [
       "Bash(docker exec:*)",
-      "Bash(ls -la \"/d/pkms/frontend/app/\\(auth\\)/\")",
-      "Bash(ls -la \"/d/pkms/frontend/app/\\(auth\\)/dashboard/\")",
-      "Bash(ls -la \"/d/pkms/frontend/app/\\(auth\\)/login/\")",
-      "Bash(ls -la \"/d/pkms/frontend/app/\\(auth\\)/signup/\")",
-      "Bash(npm install:*)"
+      "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/\")",
+      "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/dashboard/\")",
+      "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/login/\")",
+      "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/signup/\")",
+      "Bash(npm install:*)",
+      "Bash(./gradlew clean:*)",
+      "Bash(docker ps:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8080)",
+      "Bash(findstr LISTENING)",
+      "Bash(docker-compose down:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(npm run:*)",
+      "Bash(docker compose:*)",
+      "Bash(git -C d:/pkms status)",
+      "Bash(git -C d:/pkms diff HEAD)",
+      "Bash(git -C d:/pkms diff HEAD -- frontend/features/ frontend/lib/axios.ts frontend/package.json frontend/providers/ frontend/app/ frontend/views/ frontend/components/layout/)",
+      "Bash(git -C d:/pkms diff HEAD -- frontend/features/subscription/hooks.ts frontend/features/subscription/types.ts frontend/features/auth/ frontend/lib/axios.ts frontend/views/login/ frontend/views/dashboard/ frontend/views/subscription/SubscriptionListPage.tsx)"
+    ],
+    "additionalDirectories": [
+      "D:\\pkms"
     ]
   }
 }

@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SUBLENS 데이터베이스 명세서</title>
+    <style>
+      @page { margin: 20mm; }
+      * { box-sizing: border-box; }
+      body {
+        font-family: "Malgun Gothic", "Segoe UI", sans-serif;
+        color: #1a1a1a;
+        line-height: 1.7;
+        max-width: 210mm;
+        margin: 0 auto;
+        padding: 20mm;
+        font-size: 11pt;
+      }
+      h1 { font-size: 22pt; border-bottom: 3px solid #111; padding-bottom: 8px; margin-top: 0; }
+      h2 { font-size: 15pt; color: #222; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 28px; page-break-after: avoid; }
+      h3 { font-size: 12pt; color: #333; margin-top: 18px; page-break-after: avoid; }
+      table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 10pt; }
+      th, td { border: 1px solid #bbb; padding: 6px 10px; text-align: left; }
+      th { background: #f0f0f0; font-weight: bold; white-space: nowrap; }
+      td code, p code, li code {
+        background: #f4f4f4; padding: 1px 5px; border-radius: 3px;
+        font-family: "Consolas", "Courier New", monospace; font-size: 10pt;
+      }
+      pre {
+        background: #f6f6f6; border: 1px solid #ddd; border-radius: 4px;
+        padding: 12px; font-size: 9.5pt; overflow-x: auto; line-height: 1.45;
+        page-break-inside: avoid;
+      }
+      pre code { background: none; padding: 0; }
+      .meta { color: #777; font-size: 10pt; margin-bottom: 30px; }
+      .note {
+        background: #fff8e1; border-left: 4px solid #f9a825;
+        padding: 10px 14px; margin: 10px 0; font-size: 10pt; border-radius: 0 4px 4px 0;
+      }
+      .section-divider { border: none; border-top: 1px dashed #ccc; margin: 30px 0; }
+      .toc { background: #f9f9f9; border: 1px solid #ddd; padding: 16px 24px; border-radius: 6px; margin: 20px 0 30px; }
+      .toc ul { list-style: none; padding-left: 0; }
+      .toc li { padding: 3px 0; }
+      .toc a { text-decoration: none; color: #1565c0; }
+      .pk { color: #b71c1c; font-weight: bold; }
+      .fk { color: #1565c0; font-weight: bold; }
+      .idx { color: #2e7d32; font-weight: bold; }
+      .tag {
+        display: inline-block; padding: 1px 6px; border-radius: 3px;
+        font-size: 8.5pt; font-weight: bold; margin-right: 3px; color: #fff;
+      }
+      .tag-pk { background: #b71c1c; }
+      .tag-fk { background: #1565c0; }
+      .tag-idx { background: #2e7d32; }
+      .tag-uq { background: #6a1b9a; }
+      .erd-box {
+        background: #f0f4ff; border: 1px solid #c5cae9;
+        border-radius: 6px; padding: 16px 20px; margin: 14px 0; font-size: 10pt;
+      }
+      @media print {
+        body { padding: 0; }
+        .toc { page-break-after: always; }
+        h2 { page-break-before: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SUBLENS 데이터베이스 명세서</h1>
+    <p class="meta">
+      프로젝트: SUBLENS (SaaS 기반 구독 관리 플랫폼)<br />
+      DB: PostgreSQL 16 &nbsp;|&nbsp; ORM: Hibernate 6.6 (ddl-auto: update)<br />
+      작성일: 2026-03-19 &nbsp;|&nbsp; 버전: 1.0
+    </p>
+
+    <div class="toc">
+      <strong>목차</strong>
+      <ul>
+        <li>1. <a href="#s1">테이블 목록 요약</a></li>
+        <li>2. <a href="#s2">ERD (관계 다이어그램)</a></li>
+        <li>3. <a href="#s3">테이블 상세 명세</a></li>
+        <li>&nbsp;&nbsp;3.1 users &nbsp;|&nbsp; 3.2 subscriptions &nbsp;|&nbsp; 3.3 subscription_categories</li>
+        <li>&nbsp;&nbsp;3.4 service_categories &nbsp;|&nbsp; 3.5 subscription_services</li>
+        <li>4. <a href="#s4">Enum 타입 정의</a></li>
+        <li>5. <a href="#s5">DDL 스크립트</a></li>
+        <li>6. <a href="#s6">운영 참고사항</a></li>
+      </ul>
+    </div>
+
+    <!-- ================================================================== -->
+    <h2 id="s1">1. 테이블 목록 요약</h2>
+    <table>
+      <tr><th>테이블명</th><th>Entity 클래스</th><th>설명</th><th>행 예상</th></tr>
+      <tr><td><code>users</code></td><td>User</td><td>서비스 사용자 계정</td><td>가입 사용자 수</td></tr>
+      <tr><td><code>subscriptions</code></td><td>Subscription</td><td>사용자별 구독 내역</td><td>사용자 × 구독 수</td></tr>
+      <tr><td><code>subscription_categories</code></td><td>SubscriptionCategory</td><td>사용자 정의 구독 분류</td><td>소량 (카테고리)</td></tr>
+      <tr><td><code>service_categories</code></td><td>ServiceCategory</td><td>서비스 카탈로그 분류 (시스템)</td><td>소량 (고정)</td></tr>
+      <tr><td><code>subscription_services</code></td><td>ServiceCatalog</td><td>등록된 구독 서비스 목록 (시스템)</td><td>수십~수백 (고정)</td></tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s2">2. ERD (관계 다이어그램)</h2>
+
+    <style>
+      .erd-wrap {
+        overflow-x: auto;
+        padding: 10px 0 20px;
+      }
+      .erd-canvas {
+        position: relative;
+        width: 820px;
+        height: 460px;
+        font-family: "Consolas", "Courier New", monospace;
+      }
+      .erd-table {
+        position: absolute;
+        border: 2px solid #334155;
+        border-radius: 6px;
+        overflow: hidden;
+        font-size: 9pt;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        min-width: 190px;
+      }
+      .erd-table-header {
+        background: #334155;
+        color: #fff;
+        font-weight: bold;
+        padding: 5px 10px;
+        font-size: 9.5pt;
+        letter-spacing: 0.3px;
+      }
+      .erd-table-header .schema { font-size: 8pt; opacity: 0.7; margin-right: 4px; }
+      .erd-row {
+        display: flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-top: 1px solid #e2e8f0;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .erd-row:hover { background: #f8fafc; }
+      .erd-badge {
+        font-size: 7.5pt;
+        font-weight: bold;
+        padding: 0 4px;
+        border-radius: 2px;
+        min-width: 22px;
+        text-align: center;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .b-pk { background: #dc2626; }
+      .b-fk { background: #2563eb; }
+      .b-uq { background: #7c3aed; }
+      .b-sp { background: transparent; color: transparent; }
+      .erd-col-name { color: #0f172a; flex: 1; }
+      .erd-col-type { color: #64748b; font-size: 8.5pt; }
+
+      /* SVG 레이어 */
+      .erd-svg {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        overflow: visible;
+      }
+      .rel-line { stroke: #94a3b8; stroke-width: 1.5; fill: none; }
+      .rel-line-opt { stroke: #94a3b8; stroke-width: 1.5; fill: none; stroke-dasharray: 5 3; }
+      .rel-label {
+        font-size: 8pt;
+        fill: #475569;
+        font-family: "Malgun Gothic", sans-serif;
+      }
+    </style>
+
+    <div class="erd-wrap">
+      <div class="erd-canvas">
+
+        <!-- SVG 관계선 (테이블 뒤에 그려야 하므로 먼저) -->
+        <svg class="erd-svg">
+          <!-- users → subscriptions (1:N) -->
+          <line class="rel-line" x1="210" y1="80" x2="280" y2="130" />
+          <text class="rel-label" x="215" y="100">1</text>
+          <text class="rel-label" x="262" y="126">N</text>
+
+          <!-- subscriptions → subscription_categories (N:1, optional) -->
+          <line class="rel-line-opt" x1="280" y1="255" x2="30" y2="295" />
+          <text class="rel-label" x="258" y="250">N</text>
+          <text class="rel-label" x="32" y="290">1</text>
+
+          <!-- service_categories → subscription_services (1:N) -->
+          <line class="rel-line" x1="630" y1="80" x2="630" y2="290" />
+          <text class="rel-label" x="635" y="100">1</text>
+          <text class="rel-label" x="635" y="284">N</text>
+        </svg>
+
+        <!-- users (top-left) -->
+        <div class="erd-table" style="left:10px; top:10px; min-width:200px;">
+          <div class="erd-table-header">📋 users</div>
+          <div class="erd-row"><span class="erd-badge b-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-row"><span class="erd-badge b-uq">UQ</span><span class="erd-col-name">email</span><span class="erd-col-type">VARCHAR</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">password_hash</span><span class="erd-col-type">VARCHAR</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">name</span><span class="erd-col-type">VARCHAR</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">phone_number</span><span class="erd-col-type">VARCHAR</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">role</span><span class="erd-col-type">VARCHAR</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">created_at</span><span class="erd-col-type">TIMESTAMP</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">updated_at</span><span class="erd-col-type">TIMESTAMP</span></div>
+        </div>
+
+        <!-- subscription_categories (bottom-left) -->
+        <div class="erd-table" style="left:10px; top:280px; min-width:210px;">
+          <div class="erd-table-header">🗂 subscription_categories</div>
+          <div class="erd-row"><span class="erd-badge b-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-row"><span class="erd-badge b-uq">UQ</span><span class="erd-col-name">name</span><span class="erd-col-type">VARCHAR(50)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">icon</span><span class="erd-col-type">VARCHAR(100)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">color</span><span class="erd-col-type">VARCHAR(7)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">is_default</span><span class="erd-col-type">BOOLEAN</span></div>
+        </div>
+
+        <!-- subscriptions (center) -->
+        <div class="erd-table" style="left:280px; top:120px; min-width:220px;">
+          <div class="erd-table-header" style="background:#1e40af;">📦 subscriptions</div>
+          <div class="erd-row"><span class="erd-badge b-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-row"><span class="erd-badge b-fk">FK</span><span class="erd-col-name">user_id</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-row"><span class="erd-badge b-fk">FK</span><span class="erd-col-name">category_id</span><span class="erd-col-type">UUID?</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">service_name</span><span class="erd-col-type">VARCHAR(100)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">amount</span><span class="erd-col-type">NUMERIC(12,2)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">currency</span><span class="erd-col-type">VARCHAR(10)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">billing_cycle</span><span class="erd-col-type">VARCHAR(10)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">next_billing_date</span><span class="erd-col-type">DATE</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">status</span><span class="erd-col-type">VARCHAR(10)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">notify_before</span><span class="erd-col-type">BOOLEAN</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">notify_days_before</span><span class="erd-col-type">SMALLINT</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">created_at</span><span class="erd-col-type">TIMESTAMP</span></div>
+        </div>
+
+        <!-- service_categories (top-right) -->
+        <div class="erd-table" style="left:560px; top:10px; min-width:200px;">
+          <div class="erd-table-header" style="background:#065f46;">🏷 service_categories</div>
+          <div class="erd-row"><span class="erd-badge b-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-row"><span class="erd-badge b-uq">UQ</span><span class="erd-col-name">name</span><span class="erd-col-type">VARCHAR(50)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">display_order</span><span class="erd-col-type">INTEGER</span></div>
+        </div>
+
+        <!-- subscription_services (bottom-right) -->
+        <div class="erd-table" style="left:560px; top:290px; min-width:200px;">
+          <div class="erd-table-header" style="background:#065f46;">🛒 subscription_services</div>
+          <div class="erd-row"><span class="erd-badge b-pk">PK</span><span class="erd-col-name">id</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">name</span><span class="erd-col-type">VARCHAR(100)</span></div>
+          <div class="erd-row"><span class="erd-badge b-fk">FK</span><span class="erd-col-name">category_id</span><span class="erd-col-type">UUID</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">logo_domain</span><span class="erd-col-type">VARCHAR(100)</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">display_order</span><span class="erd-col-type">INTEGER</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">is_active</span><span class="erd-col-type">BOOLEAN</span></div>
+          <div class="erd-row"><span class="erd-badge b-sp">  </span><span class="erd-col-name">created_at</span><span class="erd-col-type">TIMESTAMP</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 범례 -->
+    <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:9.5pt; margin-top:4px; margin-bottom:12px;">
+      <span><span class="tag tag-pk" style="display:inline-block;padding:1px 6px;border-radius:3px;background:#dc2626;color:#fff;font-size:8.5pt;font-weight:bold;">PK</span> 기본키</span>
+      <span><span class="tag" style="display:inline-block;padding:1px 6px;border-radius:3px;background:#2563eb;color:#fff;font-size:8.5pt;font-weight:bold;">FK</span> 외래키</span>
+      <span><span class="tag" style="display:inline-block;padding:1px 6px;border-radius:3px;background:#7c3aed;color:#fff;font-size:8.5pt;font-weight:bold;">UQ</span> 유니크</span>
+      <span style="display:flex;align-items:center;gap:4px;"><svg width="30" height="10"><line x1="0" y1="5" x2="30" y2="5" stroke="#94a3b8" stroke-width="1.5"/></svg> 필수 관계 (NOT NULL FK)</span>
+      <span style="display:flex;align-items:center;gap:4px;"><svg width="30" height="10"><line x1="0" y1="5" x2="30" y2="5" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 3"/></svg> 선택 관계 (nullable FK)</span>
+    </div>
+
+    <ul>
+      <li><code>subscriptions.user_id</code> → <code>users.id</code> &nbsp;(1:N, 논리적 FK)</li>
+      <li><code>subscriptions.category_id</code> → <code>subscription_categories.id</code> &nbsp;(N:1, nullable — 점선)</li>
+      <li><code>subscription_services.category_id</code> → <code>service_categories.id</code> &nbsp;(N:1, NOT NULL)</li>
+      <li><code>subscription_categories</code> ≠ <code>service_categories</code>: 전자는 사용자 구독 분류, 후자는 서비스 카탈로그 분류</li>
+    </ul>
+
+    <!-- ================================================================== -->
+    <h2 id="s3">3. 테이블 상세 명세</h2>
+
+    <h3>3.1 users</h3>
+    <p>서비스 사용자 계정 정보를 저장합니다.</p>
+    <table>
+      <tr><th>컬럼명</th><th>Java 필드</th><th>타입</th><th>제약조건</th><th>기본값</th><th>설명</th></tr>
+      <tr>
+        <td><code>id</code> <span class="tag tag-pk">PK</span></td>
+        <td>id</td><td>UUID</td><td>NOT NULL</td><td>GenerationType.UUID</td><td>사용자 고유 ID</td>
+      </tr>
+      <tr>
+        <td><code>email</code> <span class="tag tag-uq">UQ</span></td>
+        <td>email</td><td>VARCHAR</td><td>NOT NULL, UNIQUE</td><td>—</td><td>이메일 (로그인 ID)</td>
+      </tr>
+      <tr>
+        <td><code>password_hash</code></td>
+        <td>passwordHash</td><td>VARCHAR</td><td>NOT NULL</td><td>—</td><td>BCrypt 해시 비밀번호</td>
+      </tr>
+      <tr>
+        <td><code>name</code></td>
+        <td>name</td><td>VARCHAR</td><td>NOT NULL</td><td>—</td><td>사용자 이름</td>
+      </tr>
+      <tr>
+        <td><code>phone_number</code></td>
+        <td>phoneNumber</td><td>VARCHAR</td><td>nullable</td><td>NULL</td><td>전화번호</td>
+      </tr>
+      <tr>
+        <td><code>role</code></td>
+        <td>role</td><td>VARCHAR</td><td>NOT NULL</td><td>USER</td><td>권한 (USER / ADMIN)</td>
+      </tr>
+      <tr>
+        <td><code>created_at</code></td>
+        <td>createdAt</td><td>TIMESTAMP</td><td>NOT NULL, updatable=false</td><td>@PrePersist</td><td>생성일시</td>
+      </tr>
+      <tr>
+        <td><code>updated_at</code></td>
+        <td>updatedAt</td><td>TIMESTAMP</td><td>nullable</td><td>@PreUpdate</td><td>수정일시</td>
+      </tr>
+    </table>
+
+    <hr class="section-divider" />
+
+    <h3>3.2 subscriptions</h3>
+    <p>사용자별 구독 서비스 내역을 저장합니다. 핵심 도메인 테이블.</p>
+    <table>
+      <tr><th>컬럼명</th><th>Java 필드</th><th>타입</th><th>제약조건</th><th>기본값</th><th>설명</th></tr>
+      <tr>
+        <td><code>id</code> <span class="tag tag-pk">PK</span></td>
+        <td>id</td><td>UUID</td><td>NOT NULL</td><td>GenerationType.UUID</td><td>구독 고유 ID</td>
+      </tr>
+      <tr>
+        <td><code>user_id</code> <span class="tag tag-fk">FK</span></td>
+        <td>userId</td><td>UUID</td><td>NOT NULL</td><td>—</td><td>users.id 참조 (논리적)</td>
+      </tr>
+      <tr>
+        <td><code>category_id</code> <span class="tag tag-fk">FK</span></td>
+        <td>category</td><td>UUID</td><td>nullable</td><td>NULL</td><td>subscription_categories.id 참조</td>
+      </tr>
+      <tr>
+        <td><code>service_name</code></td>
+        <td>serviceName</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>—</td><td>구독 서비스명</td>
+      </tr>
+      <tr>
+        <td><code>description</code></td>
+        <td>description</td><td>TEXT</td><td>nullable</td><td>NULL</td><td>메모/설명</td>
+      </tr>
+      <tr>
+        <td><code>amount</code></td>
+        <td>amount</td><td>NUMERIC(12,2)</td><td>NOT NULL</td><td>—</td><td>결제 금액</td>
+      </tr>
+      <tr>
+        <td><code>currency</code></td>
+        <td>currency</td><td>VARCHAR(10)</td><td>NOT NULL</td><td>KRW</td><td>통화 코드 (KRW/USD/EUR/JPY/GBP)</td>
+      </tr>
+      <tr>
+        <td><code>billing_cycle</code></td>
+        <td>billingCycle</td><td>VARCHAR(10)</td><td>NOT NULL</td><td>MONTHLY</td><td>결제 주기 (WEEKLY/MONTHLY/YEARLY)</td>
+      </tr>
+      <tr>
+        <td><code>start_date</code></td>
+        <td>startDate</td><td>DATE</td><td>nullable</td><td>오늘</td><td>구독 시작일</td>
+      </tr>
+      <tr>
+        <td><code>next_billing_date</code></td>
+        <td>nextBillingDate</td><td>DATE</td><td>NOT NULL</td><td>—</td><td>다음 결제 예정일</td>
+      </tr>
+      <tr>
+        <td><code>status</code></td>
+        <td>status</td><td>VARCHAR(10)</td><td>NOT NULL</td><td>ACTIVE</td><td>구독 상태 (ACTIVE/PAUSED/CANCELLED)</td>
+      </tr>
+      <tr>
+        <td><code>notify_before</code></td>
+        <td>notifyBefore</td><td>BOOLEAN</td><td>NOT NULL</td><td>true</td><td>갱신 알림 사용 여부</td>
+      </tr>
+      <tr>
+        <td><code>notify_days_before</code></td>
+        <td>notifyDaysBefore</td><td>SMALLINT</td><td>NOT NULL</td><td>3</td><td>갱신 N일 전 알림 (1~30)</td>
+      </tr>
+      <tr>
+        <td><code>created_at</code></td>
+        <td>createdAt</td><td>TIMESTAMP</td><td>NOT NULL, updatable=false</td><td>@PrePersist</td><td>생성일시</td>
+      </tr>
+      <tr>
+        <td><code>updated_at</code></td>
+        <td>updatedAt</td><td>TIMESTAMP</td><td>nullable</td><td>@PreUpdate</td><td>수정일시</td>
+      </tr>
+    </table>
+    <div class="note">
+      <strong>비즈니스 규칙:</strong> 무료(USER) 플랜은 최대 5개까지만 등록 가능 (<code>SUBSCRIPTION_LIMIT_EXCEEDED</code>). 소유권 검증은 서비스 레이어에서 <code>userId</code> 비교로 처리.
+    </div>
+
+    <hr class="section-divider" />
+
+    <h3>3.3 subscription_categories</h3>
+    <p>사용자가 정의하는 구독 분류 카테고리입니다. (예: 업무, 엔터테인먼트)</p>
+    <table>
+      <tr><th>컬럼명</th><th>Java 필드</th><th>타입</th><th>제약조건</th><th>기본값</th><th>설명</th></tr>
+      <tr>
+        <td><code>id</code> <span class="tag tag-pk">PK</span></td>
+        <td>id</td><td>UUID</td><td>NOT NULL</td><td>GenerationType.UUID</td><td>카테고리 고유 ID</td>
+      </tr>
+      <tr>
+        <td><code>name</code> <span class="tag tag-uq">UQ</span></td>
+        <td>name</td><td>VARCHAR(50)</td><td>NOT NULL, UNIQUE</td><td>—</td><td>카테고리명</td>
+      </tr>
+      <tr>
+        <td><code>icon</code></td>
+        <td>icon</td><td>VARCHAR(100)</td><td>nullable</td><td>NULL</td><td>아이콘 (이모지 or 아이콘 코드)</td>
+      </tr>
+      <tr>
+        <td><code>color</code></td>
+        <td>color</td><td>VARCHAR(7)</td><td>nullable</td><td>NULL</td><td>색상 hex 코드 (예: #7C3AED)</td>
+      </tr>
+      <tr>
+        <td><code>is_default</code></td>
+        <td>isDefault</td><td>BOOLEAN</td><td>NOT NULL</td><td>false</td><td>시스템 기본 카테고리 여부</td>
+      </tr>
+    </table>
+
+    <hr class="section-divider" />
+
+    <h3>3.4 service_categories</h3>
+    <p>서비스 카탈로그(<code>subscription_services</code>)의 분류 기준입니다. 시스템 관리자가 등록하는 고정 데이터.</p>
+    <table>
+      <tr><th>컬럼명</th><th>Java 필드</th><th>타입</th><th>제약조건</th><th>기본값</th><th>설명</th></tr>
+      <tr>
+        <td><code>id</code> <span class="tag tag-pk">PK</span></td>
+        <td>id</td><td>UUID</td><td>NOT NULL</td><td>GenerationType.UUID</td><td>분류 고유 ID</td>
+      </tr>
+      <tr>
+        <td><code>name</code> <span class="tag tag-uq">UQ</span></td>
+        <td>name</td><td>VARCHAR(50)</td><td>NOT NULL, UNIQUE</td><td>—</td><td>분류명 (예: 스트리밍, 생산성)</td>
+      </tr>
+      <tr>
+        <td><code>display_order</code></td>
+        <td>displayOrder</td><td>INTEGER</td><td>NOT NULL</td><td>—</td><td>UI 노출 순서</td>
+      </tr>
+    </table>
+
+    <hr class="section-divider" />
+
+    <h3>3.5 subscription_services</h3>
+    <p>서비스 선택 UI에서 제공하는 구독 서비스 카탈로그입니다. (예: Netflix, Spotify, GitHub)</p>
+    <table>
+      <tr><th>컬럼명</th><th>Java 필드</th><th>타입</th><th>제약조건</th><th>기본값</th><th>설명</th></tr>
+      <tr>
+        <td><code>id</code> <span class="tag tag-pk">PK</span></td>
+        <td>id</td><td>UUID</td><td>NOT NULL</td><td>GenerationType.UUID</td><td>서비스 고유 ID</td>
+      </tr>
+      <tr>
+        <td><code>name</code></td>
+        <td>name</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>—</td><td>서비스명 (예: Netflix)</td>
+      </tr>
+      <tr>
+        <td><code>category_id</code> <span class="tag tag-fk">FK</span></td>
+        <td>category</td><td>UUID</td><td>NOT NULL</td><td>—</td><td>service_categories.id 참조</td>
+      </tr>
+      <tr>
+        <td><code>logo_domain</code></td>
+        <td>logoDomain</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>—</td><td>파비콘 도메인 (예: netflix.com)</td>
+      </tr>
+      <tr>
+        <td><code>display_order</code></td>
+        <td>displayOrder</td><td>INTEGER</td><td>NOT NULL</td><td>—</td><td>UI 노출 순서</td>
+      </tr>
+      <tr>
+        <td><code>is_active</code></td>
+        <td>isActive</td><td>BOOLEAN</td><td>NOT NULL</td><td>true</td><td>활성 여부</td>
+      </tr>
+      <tr>
+        <td><code>created_at</code></td>
+        <td>createdAt</td><td>TIMESTAMP</td><td>NOT NULL</td><td>@CreationTimestamp</td><td>등록일시</td>
+      </tr>
+    </table>
+    <div class="note">
+      <strong>로고 URL 생성:</strong> <code>logoDomain</code> 값을 이용하여 Google Favicon API로 로고를 동적 생성합니다.<br />
+      → <code>https://www.google.com/s2/favicons?domain={logoDomain}&amp;sz=64</code>
+    </div>
+
+    <!-- ================================================================== -->
+    <h2 id="s4">4. Enum 타입 정의</h2>
+    <p>모든 Enum은 <code>@Enumerated(EnumType.STRING)</code>으로 저장됩니다.</p>
+
+    <h3>4.1 Role (users.role)</h3>
+    <table>
+      <tr><th>값</th><th>설명</th></tr>
+      <tr><td><code>USER</code></td><td>일반 사용자 (무료 플랜, 구독 최대 5개)</td></tr>
+      <tr><td><code>ADMIN</code></td><td>관리자 (서비스 카탈로그 관리 등)</td></tr>
+    </table>
+
+    <h3>4.2 SubscriptionStatus (subscriptions.status)</h3>
+    <table>
+      <tr><th>값</th><th>설명</th></tr>
+      <tr><td><code>ACTIVE</code></td><td>활성 구독</td></tr>
+      <tr><td><code>PAUSED</code></td><td>일시 정지</td></tr>
+      <tr><td><code>CANCELLED</code></td><td>해지</td></tr>
+    </table>
+
+    <h3>4.3 BillingCycle (subscriptions.billing_cycle)</h3>
+    <table>
+      <tr><th>값</th><th>설명</th></tr>
+      <tr><td><code>WEEKLY</code></td><td>주간 결제</td></tr>
+      <tr><td><code>MONTHLY</code></td><td>월간 결제</td></tr>
+      <tr><td><code>YEARLY</code></td><td>연간 결제</td></tr>
+    </table>
+
+    <h3>4.4 Currency (subscriptions.currency)</h3>
+    <table>
+      <tr><th>값</th><th>통화</th><th>소수점</th></tr>
+      <tr><td><code>KRW</code></td><td>대한민국 원</td><td>0자리</td></tr>
+      <tr><td><code>USD</code></td><td>미국 달러</td><td>2자리</td></tr>
+      <tr><td><code>EUR</code></td><td>유로</td><td>2자리</td></tr>
+      <tr><td><code>JPY</code></td><td>일본 엔</td><td>0자리</td></tr>
+      <tr><td><code>GBP</code></td><td>영국 파운드</td><td>2자리</td></tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s5">5. DDL 스크립트</h2>
+    <p>Hibernate <code>ddl-auto: update</code>가 자동 관리하지만, 초기 구성 참조용입니다.</p>
+    <pre><code>-- users
+CREATE TABLE users (
+    id           UUID PRIMARY KEY,
+    email        VARCHAR NOT NULL UNIQUE,
+    password_hash VARCHAR NOT NULL,
+    name         VARCHAR NOT NULL,
+    phone_number VARCHAR,
+    role         VARCHAR NOT NULL DEFAULT 'USER',
+    created_at   TIMESTAMP NOT NULL,
+    updated_at   TIMESTAMP
+);
+
+-- subscription_categories
+CREATE TABLE subscription_categories (
+    id         UUID PRIMARY KEY,
+    name       VARCHAR(50) NOT NULL UNIQUE,
+    icon       VARCHAR(100),
+    color      VARCHAR(7),
+    is_default BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- subscriptions
+CREATE TABLE subscriptions (
+    id                  UUID PRIMARY KEY,
+    user_id             UUID NOT NULL,
+    category_id         UUID REFERENCES subscription_categories(id),
+    service_name        VARCHAR(100) NOT NULL,
+    description         TEXT,
+    amount              NUMERIC(12,2) NOT NULL,
+    currency            VARCHAR(10) NOT NULL DEFAULT 'KRW',
+    billing_cycle       VARCHAR(10) NOT NULL DEFAULT 'MONTHLY',
+    start_date          DATE,
+    next_billing_date   DATE NOT NULL,
+    status              VARCHAR(10) NOT NULL DEFAULT 'ACTIVE',
+    notify_before       BOOLEAN NOT NULL DEFAULT TRUE,
+    notify_days_before  SMALLINT NOT NULL DEFAULT 3,
+    created_at          TIMESTAMP NOT NULL,
+    updated_at          TIMESTAMP
+);
+
+-- service_categories
+CREATE TABLE service_categories (
+    id            UUID PRIMARY KEY,
+    name          VARCHAR(50) NOT NULL UNIQUE,
+    display_order INTEGER NOT NULL
+);
+
+-- subscription_services
+CREATE TABLE subscription_services (
+    id            UUID PRIMARY KEY,
+    name          VARCHAR(100) NOT NULL,
+    category_id   UUID NOT NULL REFERENCES service_categories(id),
+    logo_domain   VARCHAR(100) NOT NULL,
+    display_order INTEGER NOT NULL,
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP NOT NULL
+);</code></pre>
+
+    <!-- ================================================================== -->
+    <h2 id="s6">6. 운영 참고사항</h2>
+
+    <h3>6.1 ddl-auto: update 주의</h3>
+    <ul>
+      <li>컬럼 <strong>추가</strong>는 자동으로 적용됩니다.</li>
+      <li>컬럼 <strong>삭제/타입 변경</strong>은 자동으로 반영되지 않으며, 수동 <code>ALTER TABLE</code>이 필요합니다.</li>
+      <li>예: <code>currency</code> 컬럼의 커스텀 타입 <code>currency_code</code>를 <code>VARCHAR</code>로 변경 시 수동 마이그레이션 필요했음.</li>
+    </ul>
+
+    <h3>6.2 Redis 데이터 (비관계형)</h3>
+    <table>
+      <tr><th>키 패턴</th><th>값</th><th>TTL</th><th>관련 테이블</th></tr>
+      <tr><td><code>refresh:{userId}</code></td><td>Refresh JWT</td><td>24시간</td><td>users.id</td></tr>
+      <tr><td><code>reset:user:{userId}</code></td><td>Reset Token UUID</td><td>10분</td><td>users.id</td></tr>
+      <tr><td><code>reset:token:{token}</code></td><td>userId</td><td>10분</td><td>users.id</td></tr>
+    </table>
+
+    <h3>6.3 인덱스 권장 사항</h3>
+    <table>
+      <tr><th>테이블</th><th>컬럼</th><th>이유</th></tr>
+      <tr><td>subscriptions</td><td>user_id</td><td>사용자별 구독 목록 조회 (가장 빈번한 쿼리)</td></tr>
+      <tr><td>subscriptions</td><td>next_billing_date</td><td>갱신 알림 배치 처리 시</td></tr>
+      <tr><td>subscriptions</td><td>status</td><td>ACTIVE 필터링</td></tr>
+      <tr><td>users</td><td>email</td><td>UNIQUE 제약조건으로 자동 생성됨</td></tr>
+    </table>
+
+    <hr style="margin-top: 40px" />
+    <p style="text-align: center; color: #999; font-size: 9pt">
+      SUBLENS Database Specification v1.0 &nbsp;|&nbsp; 2026-03-19
+    </p>
+  </body>
+</html>

@@ -1,22 +1,14 @@
-'use client';
+"use client";
 import api from "@/lib/axios";
-import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function DashBoard() {
+  const { user, isLoading, setUser } = useAuthStore();
 
-  const { data: user, isLoading, refetch } = useQuery({
-    queryKey: ["me"],
-    queryFn: async () => {
-      const res = await api.get("/api/auth/me");
-      return res.data;
-    },
-    retry: false,
-  });
   if (isLoading) return <div>로딩 중...</div>;
-
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
-    refetch();
+    setUser(null);
   };
   return (
     <div>
