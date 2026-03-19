@@ -1,6 +1,6 @@
 🐳 Docker 실행 가이드
 주요 명령어
-docker exec -it pkms-redis-1 redis-cli
+docker exec -it sublens-redis-1 redis-cli
 docker compose up -d --build
 docker compose down
 1️⃣ 사전 준비
@@ -37,11 +37,11 @@ docker ps
 
 다음 컨테이너가 실행 중이어야 합니다:
 
-pkms-postgres
+sublens-postgres
 
-pkms-backend
+sublens-backend
 
-pkms-frontend
+sublens-frontend
 
 접속 주소
 

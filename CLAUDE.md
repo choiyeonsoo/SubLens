@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PKMS is a SaaS-based concept management platform where users create, version, and tag-manage "concepts". It uses a monorepo structure with separate `backend/` and `frontend/` directories.
+SUBLENS is a SaaS-based concept management platform where users create, version, and tag-manage "concepts". It uses a monorepo structure with separate `backend/` and `frontend/` directories.
 
 ## Commands
 
@@ -14,7 +14,7 @@ cd backend
 ./gradlew bootRun          # Run backend locally (port 8080)
 ./gradlew build            # Build JAR
 ./gradlew test             # Run all tests
-./gradlew test --tests "com.pkms.backend.SomeTest"  # Run a single test
+./gradlew test --tests "com.sublens.backend.SomeTest"  # Run a single test
 ```
 
 ### Frontend (Next.js 16, React 19, TypeScript)
@@ -31,7 +31,7 @@ docker compose up --build      # Build and run all services
 docker compose down            # Stop all services
 docker compose down -v         # Stop and delete volumes (resets DB)
 docker compose logs backend    # Logs for specific service
-docker exec -it pkms-redis-1 redis-cli  # Redis CLI
+docker exec -it sublens-redis-1 redis-cli  # Redis CLI
 ```
 
 ### Environment Setup
@@ -46,7 +46,7 @@ Frontend needs `NEXT_PUBLIC_API_BASE_URL` in `frontend/.env.local` (currently se
 
 ## Architecture
 
-### Backend (`com.pkms.backend`)
+### Backend (`com.sublens.backend`)
 - **`auth/`** — Authentication: `AuthController` (routes under `/api/auth/**`), `AuthService`, `JwtTokenProvider`, DTOs
 - **`security/`** — `SecurityConfig` (CORS, stateless sessions, filter chain), `JwtAuthenticationFilter` (reads `access_token` cookie per request)
 - **`user/`** — `User` entity, `UserRepository`, `Role` enum

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createSubscription,
   deleteSubscription,
@@ -6,12 +6,19 @@ import {
   getSubscriptions,
   updateSubscription,
   updateSubscriptionStatus,
-} from './api';
-import type { SubscriptionCreateRequest, SubscriptionListRequest, SubscriptionUpdateRequest } from './types';
+} from "./api";
+import type {
+  SubscriptionCreateRequest,
+  SubscriptionListRequest,
+  SubscriptionServiceItem,
+  SubscriptionUpdateRequest,
+} from "./types";
+import api from "@/lib/axios";
+import { ApiResponse } from "@/lib/type";
 
 export const useSubscriptions = (req: SubscriptionListRequest) => {
   return useQuery({
-    queryKey: ['subscriptions', req],
+    queryKey: ["subscriptions", req],
     queryFn: () => getSubscriptions(req),
   });
 };
@@ -21,10 +28,10 @@ export const useCreateSubscription = () => {
   return useMutation({
     mutationFn: (req: SubscriptionCreateRequest) => createSubscription(req),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     },
     onError: (error) => {
-      console.error('구독 생성 실패:', error);
+      console.error("구독 생성 실패:", error);
     },
   });
 };
@@ -34,10 +41,10 @@ export const useUpdateSubscription = () => {
   return useMutation({
     mutationFn: (req: SubscriptionUpdateRequest) => updateSubscription(req),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     },
     onError: (error) => {
-      console.error('구독 수정 실패:', error);
+      console.error("구독 수정 실패:", error);
     },
   });
 };
@@ -47,10 +54,10 @@ export const useUpdateSubscriptionStatus = () => {
   return useMutation({
     mutationFn: (req: { id: string; status: string }) => updateSubscriptionStatus(req),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     },
     onError: (error) => {
-      console.error('구독 상태 변경 실패:', error);
+      console.error("구독 상태 변경 실패:", error);
     },
   });
 };
@@ -60,17 +67,30 @@ export const useDeleteSubscription = () => {
   return useMutation({
     mutationFn: (id: string) => deleteSubscription(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
     },
     onError: (error) => {
-      console.error('구독 삭제 실패:', error);
+      console.error("구독 삭제 실패:", error);
     },
   });
 };
 
 export const useCategories = () => {
   return useQuery({
-    queryKey: ['categories'],
+    queryKey: ["categories"],
     queryFn: getCategories,
   });
 };
+
+export function useSubscriptionServices() {
+  return useQuery({
+    queryKey: ["subscription-services"],
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<SubscriptionServiceItem[]>>(
+        "/api/subscription-services"
+      );
+      return res.data.data;
+    },
+    staleTime: 1000 * 60 * 60, // 1시간 캐시 — 자주 안 바뀌는 데이터
+  });
+}

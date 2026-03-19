@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+  <html lang="ko">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>SubLens — 프로젝트 기획서</title>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+      <style>
+        :root {
+          --bg: #080b12;
+          --bg2: #0d1120;
+          --bg3: #111827;
+          --accent: #6c63ff;
+          --accent2: #38bdf8;
+          --accent3: #34d399;
+          --warn: #f59e0b;
+          --text: #e8eaf0;
+          --muted: #6b7280;
+          --border: rgba(255, 255, 255, 0.07);
+          --card: rgba(255, 255, 255, 0.03);
+        }
+
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        html {
+          scroll-behavior: smooth;
+        }
+
+        body {
+          background: var(--bg);
+          color: var(--text);
+          font-family: "Noto Sans KR", sans-serif;
+          font-weight: 300;
+          line-height: 1.7;
+          overflow-x: hidden;
+        }
+
+        /* ── NOISE OVERLAY ── */
+        body::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+          pointer-events: none;
+          z-index: 0;
+          opacity: 0.4;
+        }
+
+        /* ── GLOW ORBS ── */
+        .orb {
+          position: fixed;
+          border-radius: 50%;
+          filter: blur(120px);
+          pointer-events: none;
+          z-index: 0;
+        }
+        .orb1 {
+          width: 600px;
+          height: 600px;
+          background: rgba(108, 99, 255, 0.12);
+          top: -200px;
+          right: -200px;
+        }
+        .orb2 {
+          width: 400px;
+          height: 400px;
+          background: rgba(56, 189, 248, 0.08);
+          bottom: 20%;
+          left: -150px;
+        }
+
+        /* ── NAV ── */
+        nav {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
+          padding: 20px 60px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: rgba(8, 11, 18, 0.7);
+          backdrop-filter: blur(20px);
+          border-bottom: 1px solid var(--border);
+        }
+
+        .nav-logo {
+          font-family: "Syne", sans-serif;
+          font-weight: 800;
+          font-size: 1.3rem;
+          letter-spacing: -0.02em;
+          color: #fff;
+        }
+        .nav-logo span {
+          color: var(--accent);
+        }
+
+        .nav-links {
+          display: flex;
+          gap: 32px;
+          list-style: none;
+        }
+        .nav-links a {
+          font-size: 0.8rem;
+          font-weight: 500;
+          color: var(--muted);
+          text-decoration: none;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          transition: color 0.2s;
+        }
+        .nav-links a:hover {
+          color: var(--text);
+        }
+
+        .nav-badge {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.7rem;
+          color: var(--accent3);
+          border: 1px solid var(--accent3);
+          padding: 4px 12px;
+          border-radius: 20px;
+        }
+
+        /* ── SECTIONS ── */
+        section {
+          position: relative;
+          z-index: 1;
+          padding: 100px 60px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        /* ── HERO ── */
+        .hero {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding-top: 120px;
+          max-width: 100%;
+          padding-left: 60px;
+          padding-right: 60px;
+        }
+
+        .hero-eyebrow {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.75rem;
+          color: var(--accent);
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .hero-eyebrow::before {
+          content: "";
+          display: block;
+          width: 40px;
+          height: 1px;
+          background: var(--accent);
+        }
+
+        .hero h1 {
+          font-family: "Syne", sans-serif;
+          font-weight: 800;
+          font-size: clamp(3.5rem, 8vw, 7rem);
+          line-height: 0.95;
+          letter-spacing: -0.03em;
+          color: #fff;
+          margin-bottom: 32px;
+        }
+
+        .hero h1 .outline {
+          -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+          color: transparent;
+        }
+
+        .hero h1 .accent-word {
+          background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .hero-desc {
+          font-size: 1.1rem;
+          color: var(--muted);
+          max-width: 560px;
+          margin-bottom: 48px;
+          line-height: 1.8;
+        }
+
+        .hero-stats {
+          display: flex;
+          gap: 48px;
+          border-top: 1px solid var(--border);
+          padding-top: 40px;
+          margin-top: 40px;
+        }
+
+        .stat-item {
+        }
+        .stat-num {
+          font-family: "Syne", sans-serif;
+          font-weight: 700;
+          font-size: 2rem;
+          color: #fff;
+          line-height: 1;
+          margin-bottom: 4px;
+        }
+        .stat-num span {
+          color: var(--accent);
+        }
+        .stat-label {
+          font-size: 0.75rem;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+        }
+
+        /* ── SECTION HEADER ── */
+        .section-num {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.7rem;
+          color: var(--accent);
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .section-num::after {
+          content: "";
+          flex: 1;
+          max-width: 40px;
+          height: 1px;
+          background: var(--accent);
+        }
+
+        .section-title {
+          font-family: "Syne", sans-serif;
+          font-weight: 800;
+          font-size: clamp(2rem, 4vw, 3.2rem);
+          line-height: 1.05;
+          letter-spacing: -0.02em;
+          color: #fff;
+          margin-bottom: 16px;
+        }
+
+        .section-sub {
+          color: var(--muted);
+          font-size: 1rem;
+          max-width: 560px;
+          margin-bottom: 64px;
+        }
+
+        /* ── OVERVIEW GRID ── */
+        .overview-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2px;
+          background: var(--border);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          overflow: hidden;
+          margin-bottom: 40px;
+        }
+
+        .overview-cell {
+          background: var(--bg2);
+          padding: 40px;
+        }
+        .overview-cell:first-child {
+          grid-column: 1 / -1;
+          background: linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.1) 0%,
+            rgba(56, 189, 248, 0.05) 100%
+          );
+          border-bottom: 1px solid var(--border);
+        }
+
+        .oc-label {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.65rem;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          margin-bottom: 10px;
+        }
+        .oc-value {
+          font-size: 1rem;
+          color: var(--text);
+          font-weight: 400;
+          line-height: 1.6;
+        }
+        .oc-value.large {
+          font-family: "Syne", sans-serif;
+          font-size: 1.3rem;
+          font-weight: 700;
+          color: #fff;
+        }
+
+        /* ── TECH STACK ── */
+        .stack-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .stack-card {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 28px;
+          transition:
+            border-color 0.2s,
+            transform 0.2s;
+          animation: fadeUp 0.5s ease both;
+        }
+        .stack-card:hover {
+          border-color: rgba(108, 99, 255, 0.3);
+          transform: translateY(-4px);
+        }
+
+        .stack-icon {
+          font-size: 1.5rem;
+          margin-bottom: 12px;
+        }
+        .stack-name {
+          font-family: "Syne", sans-serif;
+          font-weight: 700;
+          font-size: 1rem;
+          color: #fff;
+          margin-bottom: 8px;
+        }
+        .stack-detail {
+          font-size: 0.8rem;
+          color: var(--muted);
+          line-height: 1.6;
+        }
+        .stack-tag {
+          display: inline-block;
+          margin-top: 12px;
+          padding: 3px 10px;
+          background: rgba(108, 99, 255, 0.1);
+          border: 1px solid rgba(108, 99, 255, 0.2);
+          border-radius: 20px;
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.65rem;
+          color: var(--accent);
+        }
+
+        /* ── FEATURES ── */
+        .features-layout {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+        }
+
+        .feature-block {
+          position: relative;
+          padding: 36px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          overflow: hidden;
+          transition: border-color 0.3s;
+        }
+        .feature-block:hover {
+          border-color: rgba(108, 99, 255, 0.25);
+        }
+
+        .feature-block.featured {
+          grid-column: 1 / -1;
+          background: linear-gradient(
+            135deg,
+            rgba(108, 99, 255, 0.08) 0%,
+            rgba(56, 189, 248, 0.04) 100%
+          );
+          border-color: rgba(108, 99, 255, 0.2);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          align-items: center;
+        }
+
+        .feature-num {
+          font-family: "Syne", sans-serif;
+          font-weight: 800;
+          font-size: 3rem;
+          color: rgba(108, 99, 255, 0.15);
+          line-height: 1;
+          margin-bottom: 8px;
+        }
+
+        .feature-title {
+          font-family: "Syne", sans-serif;
+          font-weight: 700;
+          font-size: 1.15rem;
+          color: #fff;
+          margin-bottom: 10px;
+        }
+
+        .feature-desc {
+          font-size: 0.875rem;
+          color: var(--muted);
+          line-height: 1.7;
+        }
+
+        .feature-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 16px;
+        }
+
+        .ftag {
+          padding: 3px 10px;
+          border-radius: 20px;
+          font-size: 0.65rem;
+          font-family: "JetBrains Mono", monospace;
+          letter-spacing: 0.05em;
+        }
+        .ftag.blue {
+          background: rgba(56, 189, 248, 0.1);
+          color: var(--accent2);
+          border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        .ftag.green {
+          background: rgba(52, 211, 153, 0.1);
+          color: var(--accent3);
+          border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+        .ftag.purple {
+          background: rgba(108, 99, 255, 0.1);
+          color: var(--accent);
+          border: 1px solid rgba(108, 99, 255, 0.2);
+        }
+        .ftag.yellow {
+          background: rgba(245, 158, 11, 0.1);
+          color: var(--warn);
+          border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        /* ── BUNDLE HIGHLIGHT ── */
+        .bundle-section {
+          background: linear-gradient(135deg, rgba(108, 99, 255, 0.06) 0%, rgba(8, 11, 18, 0) 60%);
+          border: 1px solid rgba(108, 99, 255, 0.15);
+          border-radius: 20px;
+          padding: 60px;
+          margin: 0;
+        }
+
+        .provider-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+          margin-top: 48px;
+        }
+
+        .provider-card {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 24px;
+          text-align: center;
+          transition: all 0.25s;
+        }
+        .provider-card:hover {
+          background: rgba(108, 99, 255, 0.06);
+          border-color: rgba(108, 99, 255, 0.25);
+          transform: translateY(-4px);
+        }
+
+        .provider-emoji {
+          font-size: 2rem;
+          margin-bottom: 12px;
+          display: block;
+        }
+        .provider-name {
+          font-family: "Syne", sans-serif;
+          font-weight: 700;
+          font-size: 0.95rem;
+          color: #fff;
+          margin-bottom: 8px;
+        }
+        .provider-detail {
+          font-size: 0.75rem;
+          color: var(--muted);
+          line-height: 1.5;
+        }
+
+        .flow-diagram {
+          margin-top: 48px;
+          display: flex;
+          align-items: center;
+          gap: 0;
+          flex-wrap: wrap;
+          gap: 0;
+        }
+
+        .flow-step {
+          flex: 1;
+          min-width: 140px;
+          padding: 20px 16px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          text-align: center;
+          position: relative;
+        }
+
+        .flow-step::after {
+          content: "→";
+          position: absolute;
+          right: -18px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--muted);
+          font-size: 1rem;
+          z-index: 2;
+        }
+        .flow-step:last-child::after {
+          display: none;
+        }
+
+        .flow-step-num {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.6rem;
+          color: var(--accent);
+          margin-bottom: 6px;
+        }
+        .flow-step-title {
+          font-size: 0.8rem;
+          font-weight: 500;
+          color: var(--text);
+          margin-bottom: 4px;
+        }
+        .flow-step-sub {
+          font-size: 0.7rem;
+          color: var(--muted);
+        }
+
+        /* ── ROADMAP ── */
+        .roadmap {
+          position: relative;
+          padding-left: 40px;
+        }
+
+        .roadmap::before {
+          content: "";
+          position: absolute;
+          left: 8px;
+          top: 0;
+          bottom: 0;
+          width: 1px;
+          background: linear-gradient(to bottom, var(--accent), rgba(108, 99, 255, 0));
+        }
+
+        .roadmap-item {
+          position: relative;
+          margin-bottom: 48px;
+          opacity: 0;
+          animation: fadeLeft 0.5s ease both;
+        }
+        .roadmap-item:nth-child(1) {
+          animation-delay: 0.1s;
+        }
+        .roadmap-item:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        .roadmap-item:nth-child(3) {
+          animation-delay: 0.3s;
+        }
+        .roadmap-item:nth-child(4) {
+          animation-delay: 0.4s;
+        }
+        .roadmap-item:nth-child(5) {
+          animation-delay: 0.5s;
+        }
+        .roadmap-item:nth-child(6) {
+          animation-delay: 0.6s;
+        }
+        .roadmap-item:nth-child(7) {
+          animation-delay: 0.7s;
+        }
+
+        .roadmap-item::before {
+          content: "";
+          position: absolute;
+          left: -36px;
+          top: 6px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: var(--accent);
+          box-shadow: 0 0 12px var(--accent);
+        }
+
+        .roadmap-item.done::before {
+          background: var(--accent3);
+          box-shadow: 0 0 12px var(--accent3);
+        }
+        .roadmap-item.future::before {
+          background: var(--muted);
+          box-shadow: none;
+        }
+
+        .roadmap-phase {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.65rem;
+          color: var(--accent);
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          margin-bottom: 6px;
+        }
+        .roadmap-item.done .roadmap-phase {
+          color: var(--accent3);
+        }
+        .roadmap-item.future .roadmap-phase {
+          color: var(--muted);
+        }
+
+        .roadmap-title {
+          font-family: "Syne", sans-serif;
+          font-weight: 700;
+          font-size: 1.1rem;
+          color: #fff;
+          margin-bottom: 8px;
+        }
+
+        .roadmap-desc {
+          font-size: 0.875rem;
+          color: var(--muted);
+          line-height: 1.6;
+          max-width: 600px;
+        }
+
+        .roadmap-tasks {
+          margin-top: 12px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .rtask {
+          font-size: 0.7rem;
+          padding: 3px 10px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--border);
+          border-radius: 20px;
+          color: var(--muted);
+          font-family: "JetBrains Mono", monospace;
+        }
+
+        /* ── MONETIZATION ── */
+        .pricing-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+        }
+
+        .price-card {
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          padding: 40px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .price-card.pro {
+          border-color: rgba(108, 99, 255, 0.3);
+          background: linear-gradient(135deg, rgba(108, 99, 255, 0.06) 0%, transparent 100%);
+        }
+
+        .price-card.pro::before {
+          content: "RECOMMENDED";
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.6rem;
+          color: var(--accent);
+          border: 1px solid var(--accent);
+          padding: 3px 8px;
+          border-radius: 20px;
+          letter-spacing: 0.1em;
+        }
+
+        .price-tier {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.7rem;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          margin-bottom: 12px;
+        }
+
+        .price-amount {
+          font-family: "Syne", sans-serif;
+          font-weight: 800;
+          font-size: 2.8rem;
+          color: #fff;
+          line-height: 1;
+          margin-bottom: 6px;
+        }
+        .price-amount sup {
+          font-size: 1.2rem;
+          font-weight: 400;
+          color: var(--muted);
+          vertical-align: top;
+          margin-top: 8px;
+        }
+        .price-amount sub {
+          font-size: 1rem;
+          font-weight: 400;
+          color: var(--muted);
+        }
+
+        .price-desc {
+          font-size: 0.8rem;
+          color: var(--muted);
+          margin-bottom: 28px;
+          padding-bottom: 28px;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .price-feature {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          margin-bottom: 12px;
+          font-size: 0.85rem;
+          color: var(--text);
+        }
+        .price-feature::before {
+          content: "✓";
+          color: var(--accent3);
+          font-weight: 700;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+        .price-feature.muted {
+          color: var(--muted);
+        }
+        .price-feature.muted::before {
+          content: "—";
+          color: var(--muted);
+        }
+
+        /* ── DATA ARCH ── */
+        .entity-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .entity-card {
+          background: var(--bg2);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .entity-header {
+          padding: 16px 20px;
+          background: rgba(108, 99, 255, 0.08);
+          border-bottom: 1px solid var(--border);
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.8rem;
+          color: var(--accent);
+          font-weight: 500;
+        }
+
+        .entity-fields {
+          padding: 16px 20px;
+        }
+
+        .entity-field {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 5px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          font-size: 0.75rem;
+        }
+        .entity-field:last-child {
+          border-bottom: none;
+        }
+
+        .ef-name {
+          color: var(--text);
+          font-family: "JetBrains Mono", monospace;
+        }
+        .ef-type {
+          color: var(--muted);
+          font-size: 0.65rem;
+        }
+        .ef-pk {
+          color: var(--warn);
+        }
+        .ef-fk {
+          color: var(--accent2);
+        }
+
+        /* ── FOOTER ── */
+        footer {
+          position: relative;
+          z-index: 1;
+          border-top: 1px solid var(--border);
+          padding: 40px 60px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .footer-left {
+          font-family: "Syne", sans-serif;
+          font-weight: 800;
+          font-size: 1.1rem;
+          color: #fff;
+        }
+        .footer-left span {
+          color: var(--accent);
+        }
+
+        .footer-meta {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.7rem;
+          color: var(--muted);
+          text-align: right;
+          line-height: 1.8;
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+          border: none;
+          border-top: 1px solid var(--border);
+          margin: 0;
+        }
+
+        /* ── INLINE CODE ── */
+        code {
+          font-family: "JetBrains Mono", monospace;
+          font-size: 0.8em;
+          color: var(--accent2);
+          background: rgba(56, 189, 248, 0.08);
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(24px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.4;
+          }
+        }
+
+        .animate {
+          animation: fadeUp 0.6s ease both;
+        }
+        .delay-1 {
+          animation-delay: 0.1s;
+        }
+        .delay-2 {
+          animation-delay: 0.2s;
+        }
+        .delay-3 {
+          animation-delay: 0.3s;
+        }
+
+        .live-dot {
+          display: inline-block;
+          width: 6px;
+          height: 6px;
+          background: var(--accent3);
+          border-radius: 50%;
+          animation: pulse 2s ease infinite;
+          margin-right: 6px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+
+      <!-- NAV -->
+      <nav>
+        <div class="nav-logo">Sub<span>Lens</span></div>
+        <ul class="nav-links">
+          <li><a href="#overview">개요</a></li>
+          <li><a href="#features">기능</a></li>
+          <li><a href="#bundle">번들최적화</a></li>
+          <li><a href="#roadmap">로드맵</a></li>
+          <li><a href="#data">데이터설계</a></li>
+          <li><a href="#pricing">수익화</a></li>
+        </ul>
+        <div class="nav-badge"><span class="live-dot"></span>v1.0 기획서</div>
+      </nav>
+
+      <!-- HERO -->
+      <div class="hero">
+        <div class="hero-eyebrow">Project Proposal · 2026</div>
+        <h1>
+          당신의 구독을<br />
+          <span class="outline">낭비 없이</span><br />
+          <span class="accent-word">최적화하다</span>
+        </h1>
+        <p class="hero-desc">
+          SubLens는 흩어진 구독 서비스를 한곳에 모아 지출을 분석하고, 통신사 결합 및 네이버플러스
+          멤버십을 통한 최적 번들 조합을 AI가 자동으로 추천하는 구독 관리 SaaS입니다.
+        </p>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-num">₩<span>47</span>만</div>
+            <div class="stat-label">한국인 평균 월 구독 지출</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num"><span>3.2</span>개</div>
+            <div class="stat-label">인지 못한 중복 구독 평균</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num"><span>4</span>개</div>
+            <div class="stat-label">지원 번들 플랫폼</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">Free<span>+</span>Pro</div>
+            <div class="stat-label">수익화 모델</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- OVERVIEW -->
+      <section id="overview">
+        <div class="section-num">01 &mdash; Overview</div>
+        <h2 class="section-title">프로젝트 개요</h2>
+        <p class="section-sub">SubLens의 핵심 목표와 기술 스택을 한눈에 정리합니다.</p>
+
+        <div class="overview-grid animate">
+          <div class="overview-cell">
+            <div class="oc-label">Product Vision</div>
+            <div class="oc-value large">
+              구독 서비스를 수동 등록하고, 갱신 알림 · 지출 분석 · AI 기반 대체재 추천 ·
+              통신사/네이버 번들 최적화를 제공하는 개인 구독 관리 SaaS. 실제 런칭 및 수익화 목표.
+            </div>
+          </div>
+          <div class="overview-cell">
+            <div class="oc-label">Target User</div>
+            <div class="oc-value">
+              월 3개 이상 구독 서비스를 이용하며 지출을 최적화하고 싶은 한국 사용자. 특히 통신사
+              요금제와 OTT를 결합해 절약하고 싶은 20~40대.
+            </div>
+          </div>
+          <div class="overview-cell">
+            <div class="oc-label">Architecture</div>
+            <div class="oc-value">
+              Monorepo · Spring Boot + Next.js (App Router) · PostgreSQL + pgvector · Redis · Docker
+              Compose
+            </div>
+          </div>
+          <div class="overview-cell">
+            <div class="oc-label">Core Differentiator</div>
+            <div class="oc-value">
+              단순 구독 트래커를 넘어, 통신사 결합/네이버플러스 번들 최적화를 AI가 분석해 실질적인
+              절약 금액을 제시하는 추천 엔진
+            </div>
+          </div>
+          <div class="overview-cell">
+            <div class="oc-label">Revenue Model</div>
+            <div class="oc-value">
+              Freemium — Free (5개 제한) / Pro $5~9/월 (무제한 + AI 추천 + 번들 최적화)
+            </div>
+          </div>
+        </div>
+
+        <!-- TECH STACK -->
+        <div class="stack-grid">
+          <div class="stack-card animate delay-1">
+            <div class="stack-icon">⚙️</div>
+            <div class="stack-name">Backend</div>
+            <div class="stack-detail">
+              Spring Boot · JWT (HttpOnly Cookie) · Redis (Token Cache) · Resend API (Email)
+            </div>
+            <span class="stack-tag">com.sublens.backend</span>
+          </div>
+          <div class="stack-card animate delay-2">
+            <div class="stack-icon">🖥️</div>
+            <div class="stack-name">Frontend</div>
+            <div class="stack-detail">
+              Next.js 14 (App Router) · TanStack Query · Axios Interceptor · Tailwind CSS
+            </div>
+            <span class="stack-tag">features/ + views/</span>
+          </div>
+          <div class="stack-card animate delay-3">
+            <div class="stack-icon">🗄️</div>
+            <div class="stack-name">Database</div>
+            <div class="stack-detail">
+              PostgreSQL 16 · pgvector (임베딩 저장) · Redis 7 (세션/캐시) · JSONB (번들 혜택 구조)
+            </div>
+            <span class="stack-tag">postgres:16</span>
+          </div>
+          <div class="stack-card animate delay-1">
+            <div class="stack-icon">🤖</div>
+            <div class="stack-name">AI / ML</div>
+            <div class="stack-detail">
+              Claude API (추천 리포트 생성) · OpenAI Embeddings (서비스 정보 임베딩) · RAG
+              파이프라인
+            </div>
+            <span class="stack-tag">pgvector + RAG</span>
+          </div>
+          <div class="stack-card animate delay-2">
+            <div class="stack-icon">🐍</div>
+            <div class="stack-name">Crawler</div>
+            <div class="stack-detail">
+              Python · Playwright (JS 렌더링 대응) · Spring @Scheduled (배치 트리거) · 매일 새벽 2시
+              실행
+            </div>
+            <span class="stack-tag">batch / cron</span>
+          </div>
+          <div class="stack-card animate delay-3">
+            <div class="stack-icon">🐳</div>
+            <div class="stack-name">Infra</div>
+            <div class="stack-detail">
+              Docker Compose · Nginx (Reverse Proxy) · 포트: Backend 8081 · Frontend 3000
+            </div>
+            <span class="stack-tag">ddl-auto: update</span>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- FEATURES -->
+      <section id="features">
+        <div class="section-num">02 &mdash; Core Features</div>
+        <h2 class="section-title">핵심 기능</h2>
+        <p class="section-sub">7가지 핵심 기능으로 구성된 SubLens의 기능 명세입니다.</p>
+
+        <div class="features-layout">
+          <div class="feature-block featured animate">
+            <div>
+              <div class="feature-num">07</div>
+              <div class="feature-title">🏆 구독 번들 최적화 추천 (AI)</div>
+              <div class="feature-desc">
+                사용자의 등록된 구독 목록을 분석하여, 통신사 결합 상품 또는 네이버플러스 멤버십을
+                통해 절약 가능한 금액과 최적 구독 조합을 AI가 자동 추천합니다. Claude API가 자연어
+                형태의 맞춤 리포트를 생성합니다.
+              </div>
+              <div class="feature-tags">
+                <span class="ftag purple">Claude API</span>
+                <span class="ftag blue">pgvector RAG</span>
+                <span class="ftag green">번들 매핑 엔진</span>
+                <span class="ftag yellow">Pro 전용</span>
+              </div>
+            </div>
+            <div
+              style="
+                background: rgba(108, 99, 255, 0.05);
+                border: 1px solid rgba(108, 99, 255, 0.15);
+                border-radius: 12px;
+                padding: 24px;
+              "
+            >
+              <div
+                style="
+                  font-family: &quot;JetBrains Mono&quot;, monospace;
+                  font-size: 0.7rem;
+                  color: var(--accent);
+                  margin-bottom: 16px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                "
+              >
+                AI 추천 예시
+              </div>
+              <div
+                style="
+                  font-size: 0.82rem;
+                  color: var(--text);
+                  line-height: 1.8;
+                  white-space: pre-line;
+                "
+              >
+                "현재 Netflix(월 13,500원), YouTube Premium(월 14,900원), Disney+(월 9,900원)를 개별
+                구독 중이십니다.
+
+                <span style="color: var(--accent3); font-weight: 500"
+                  >→ LGU+ 유독Pick 유튜브+디즈니 번들로 전환 시 월 23,800원 → 23,800원 절약
+                  가능</span
+                >
+
+                <span style="color: var(--accent2)"
+                  >→ 네이버플러스 멤버십(4,900원) 가입 시 Netflix 광고형 포함 + 쇼핑 5% 적립"</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="feature-block animate delay-1">
+            <div class="feature-num">01</div>
+            <div class="feature-title">📋 구독 수동 등록/관리 CRUD</div>
+            <div class="feature-desc">
+              서비스명, 금액, 결제 주기, 갱신일, 카테고리 등을 등록하고 구독 목록을 한눈에
+              관리합니다.
+            </div>
+            <div class="feature-tags">
+              <span class="ftag blue">REST API</span>
+              <span class="ftag green">Free</span>
+            </div>
+          </div>
+
+          <div class="feature-block animate delay-2">
+            <div class="feature-num">02</div>
+            <div class="feature-title">🔔 갱신일 알림</div>
+            <div class="feature-desc">
+              갱신 D-N일 전 이메일 자동 발송. Resend API 활용. 알림 일정 커스터마이징 지원.
+            </div>
+            <div class="feature-tags">
+              <span class="ftag blue">Resend API</span>
+              <span class="ftag green">Free</span>
+            </div>
+          </div>
+
+          <div class="feature-block animate delay-1">
+            <div class="feature-num">03</div>
+            <div class="feature-title">📊 지출 분석 대시보드</div>
+            <div class="feature-desc">
+              월별 / 카테고리별 / 연간 환산 지출을 시각화. 구독 증가 추이 및 낭비 지수 제공.
+            </div>
+            <div class="feature-tags">
+              <span class="ftag purple">차트 시각화</span>
+              <span class="ftag yellow">Pro</span>
+            </div>
+          </div>
+
+          <div class="feature-block animate delay-2">
+            <div class="feature-num">04</div>
+            <div class="feature-title">🔍 pgvector 기반 대체재 추천</div>
+            <div class="feature-desc">
+              벡터 유사도 검색으로 현재 구독 서비스의 대체 서비스를 비용·기능 기준으로 추천.
+            </div>
+            <div class="feature-tags">
+              <span class="ftag blue">pgvector</span>
+              <span class="ftag yellow">Pro</span>
+            </div>
+          </div>
+
+          <div class="feature-block animate delay-1">
+            <div class="feature-num">05</div>
+            <div class="feature-title">💬 AI 챗봇 어시스턴트</div>
+            <div class="feature-desc">
+              RAG 방식으로 개인 구독 데이터 + 서비스 지식을 결합. 자연어로 구독 최적화 질문 가능.
+            </div>
+            <div class="feature-tags">
+              <span class="ftag purple">Claude API</span>
+              <span class="ftag yellow">Pro</span>
+            </div>
+          </div>
+
+          <div class="feature-block animate delay-2">
+            <div class="feature-num">06</div>
+            <div class="feature-title">📰 구독 뉴스 & 가격 변동 알림</div>
+            <div class="feature-desc">
+              주요 구독 서비스의 가격 변동, 서비스 종료, 신규 출시 정보를 크롤링해 알림 발송.
+            </div>
+            <div class="feature-tags">
+              <span class="ftag blue">크롤링</span>
+              <span class="ftag yellow">Pro</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- BUNDLE OPTIMIZATION -->
+      <section id="bundle" style="padding-top: 0">
+        <div class="bundle-section">
+          <div class="section-num">03 &mdash; Bundle Optimization</div>
+          <h2 class="section-title">번들 최적화 시스템</h2>
+          <p class="section-sub">
+            통신사 및 네이버플러스 번들 데이터를 수집·임베딩하여 AI 추천 엔진의 지식 기반으로
+            활용합니다.
+          </p>
+
+          <div class="provider-grid">
+            <div class="provider-card">
+              <span class="provider-emoji">📡</span>
+              <div class="provider-name">SKT T우주</div>
+              <div class="provider-detail">
+                T우주패스 시리즈<br />TVING, Wavve, YouTube,<br />Disney+, 편의점/카페 결합
+              </div>
+            </div>
+            <div class="provider-card">
+              <span class="provider-emoji">📶</span>
+              <div class="provider-name">KT 구독</div>
+              <div class="provider-detail">
+                OTT 초이스 요금제<br />Netflix, Disney+, TVING,<br />YouTube 요금제 결합
+              </div>
+            </div>
+            <div class="provider-card">
+              <span class="provider-emoji">📲</span>
+              <div class="provider-name">LGU+ 유독</div>
+              <div class="provider-detail">
+                유독Pick 번들<br />OTT + 라이프 쿠폰<br />매달 변경 가능
+              </div>
+            </div>
+            <div class="provider-card">
+              <span class="provider-emoji">🟢</span>
+              <div class="provider-name">네이버플러스</div>
+              <div class="provider-detail">
+                월 4,900원<br />Netflix/TVING/웹툰 택1<br />+ 페이 5% 적립
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 48px">
+            <div
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 0.7rem;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.15em;
+                margin-bottom: 20px;
+              "
+            >
+              Data Pipeline
+            </div>
+            <div class="flow-diagram" style="gap: 12px">
+              <div class="flow-step">
+                <div class="flow-step-num">STEP 01</div>
+                <div class="flow-step-title">배치 크롤링</div>
+                <div class="flow-step-sub">Playwright<br />매일 새벽 2시</div>
+              </div>
+              <div class="flow-step">
+                <div class="flow-step-num">STEP 02</div>
+                <div class="flow-step-title">변경 감지</div>
+                <div class="flow-step-sub">기존 DB와 diff<br />변경분만 추출</div>
+              </div>
+              <div class="flow-step">
+                <div class="flow-step-num">STEP 03</div>
+                <div class="flow-step-title">임베딩 생성</div>
+                <div class="flow-step-sub">OpenAI Embeddings<br />번들 단위 청킹</div>
+              </div>
+              <div class="flow-step">
+                <div class="flow-step-num">STEP 04</div>
+                <div class="flow-step-title">pgvector 저장</div>
+                <div class="flow-step-sub">bundle_products<br />벡터 업서트</div>
+              </div>
+              <div class="flow-step">
+                <div class="flow-step-num">STEP 05</div>
+                <div class="flow-step-title">RAG 추천</div>
+                <div class="flow-step-sub">Claude API<br />자연어 리포트</div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 40px;
+              padding: 24px;
+              background: rgba(245, 158, 11, 0.05);
+              border: 1px solid rgba(245, 158, 11, 0.15);
+              border-radius: 12px;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;JetBrains Mono&quot;, monospace;
+                font-size: 0.7rem;
+                color: var(--warn);
+                margin-bottom: 10px;
+              "
+            >
+              ⚠ 크롤링 제한 사항
+            </div>
+            <div style="font-size: 0.82rem; color: var(--muted); line-height: 1.7">
+              네이버 도메인은 직접 크롤링 제한이 있어
+              <strong style="color: var(--text)">관리자 어드민 UI를 통한 수동 업데이트</strong>로
+              대응. KT는 일부 로그인 필요 구간 존재 → 공개 헬프 페이지 위주 수집. 모든 번들 데이터는
+              <code>last_synced_at</code> 기준 30일 이상 미갱신 시 관리자 알림 발송.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- ROADMAP -->
+      <section id="roadmap">
+        <div class="section-num">04 &mdash; Roadmap</div>
+        <h2 class="section-title">개발 로드맵</h2>
+        <p class="section-sub">
+          우선순위 기반 7단계 개발 순서. 각 단계는 이전 단계의 데이터를 기반으로 합니다.
+        </p>
+
+        <div class="roadmap">
+          <div class="roadmap-item done">
+            <div class="roadmap-phase">Phase 1 · 완료</div>
+            <div class="roadmap-title">기반 인프라 & 인증 시스템</div>
+            <div class="roadmap-desc">
+              Spring Boot + Next.js 모노레포 구성, JWT HttpOnly 쿠키 인증, Redis 토큰 캐시, Docker
+              Compose 환경 세팅 완료.
+            </div>
+            <div class="roadmap-tasks">
+              <span class="rtask">Spring Boot</span><span class="rtask">JWT Auth</span
+              ><span class="rtask">Redis</span><span class="rtask">Docker Compose</span>
+            </div>
+          </div>
+
+          <div class="roadmap-item">
+            <div class="roadmap-phase">Phase 2 · 진행중</div>
+            <div class="roadmap-title">구독 CRUD & 목록 UI</div>
+            <div class="roadmap-desc">
+              Subscription 엔티티 ERD 설계, REST API 구현, 프론트엔드 구독 목록 페이지 및 등록/수정
+              폼 완성.
+            </div>
+            <div class="roadmap-tasks">
+              <span class="rtask">ERD 설계</span><span class="rtask">REST CRUD</span
+              ><span class="rtask">구독 목록 UI</span><span class="rtask">모달 폼</span>
+            </div>
+          </div>
+
+          <div class="roadmap-item">
+            <div class="roadmap-phase">Phase 3</div>
+            <div class="roadmap-title">지출 분석 대시보드</div>
+            <div class="roadmap-desc">
+              월별 / 카테고리별 집계 API, 차트 시각화, 연간 환산 및 낭비 지수 계산 로직 구현.
+            </div>
+            <div class="roadmap-tasks">
+              <span class="rtask">집계 API</span><span class="rtask">차트 컴포넌트</span
+              ><span class="rtask">낭비 지수</span>
+            </div>
+          </div>
+
+          <div class="roadmap-item">
+            <div class="roadmap-phase">Phase 4</div>
+            <div class="roadmap-title">갱신일 알림 시스템</div>
+            <div class="roadmap-desc">
+              Resend API 기반 갱신 D-3, D-1 자동 이메일. Spring @Scheduled 배치, 알림 이력 관리.
+            </div>
+            <div class="roadmap-tasks">
+              <span class="rtask">Resend API</span><span class="rtask">@Scheduled</span
+              ><span class="rtask">notification_logs</span>
+            </div>
+          </div>
+
+          <div class="roadmap-item">
+            <div class="roadmap-phase">Phase 5</div>
+            <div class="roadmap-title">pgvector 세팅 & 서비스 DB 구축</div>
+            <div class="roadmap-desc">
+              PostgreSQL pgvector 확장 활성화, 서비스 정보 임베딩 데이터 적재, 유사도 검색 API 개발.
+            </div>
+            <div class="roadmap-tasks">
+              <span class="rtask">pgvector</span><span class="rtask">OpenAI Embeddings</span
+              ><span class="rtask">서비스 DB</span>
+            </div>
+          </div>
+
+          <div class="roadmap-item future">
+            <div class="roadmap-phase">Phase 6</div>
+            <div class="roadmap-title">번들 최적화 추천 엔진</div>
+            <div class="roadmap-desc">
+              통신사/네이버 번들 크롤러 구축, bundle_products 테이블 적재, 구독 매핑 로직, Claude
+              API 자연어 리포트 생성.
+            </div>
+            <div class="roadmap-tasks">
+              <span class="rtask">Playwright 크롤러</span><span class="rtask">번들 매핑</span
+              ><span class="rtask">절감액 계산</span><span class="rtask">Claude API</span>
+            </div>
+          </div>
+
+          <div class="roadmap-item future">
+            <div class="roadmap-phase">Phase 7</div>
+            <div class="roadmap-title">AI 챗봇 & 가격 변동 알림</div>
+            <div class="roadmap-desc">
+              RAG 기반 챗봇 어시스턴트 완성, 구독 서비스 가격 변동 크롤링 및 알림 연동.
+            </div>
+            <div class="roadmap-tasks">
+              <span class="rtask">RAG 챗봇</span><span class="rtask">가격 변동 알림</span
+              ><span class="rtask">뉴스 크롤링</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- DATA ARCHITECTURE -->
+      <section id="data">
+        <div class="section-num">05 &mdash; Data Architecture</div>
+        <h2 class="section-title">핵심 엔티티 설계</h2>
+        <p class="section-sub">번들 최적화 기능을 포함한 전체 도메인 ERD 요약.</p>
+
+        <div class="entity-grid">
+          <div class="entity-card">
+            <div class="entity-header">subscriptions</div>
+            <div class="entity-fields">
+              <div class="entity-field">
+                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name ef-fk">user_id</span><span class="ef-type">uuid FK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">service_name</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">amount</span><span class="ef-type">decimal</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">billing_cycle</span><span class="ef-type">enum</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">next_billing_date</span><span class="ef-type">date</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">status</span><span class="ef-type">enum</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="entity-card">
+            <div class="entity-header">bundle_products</div>
+            <div class="entity-fields">
+              <div class="entity-field">
+                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">provider</span><span class="ef-type">enum</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">bundle_name</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">monthly_price</span><span class="ef-type">decimal</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">included_services</span><span class="ef-type">jsonb</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">source_url</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">last_synced_at</span><span class="ef-type">timestamp</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="entity-card">
+            <div class="entity-header">bundle_recommendations</div>
+            <div class="entity-fields">
+              <div class="entity-field">
+                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name ef-fk">user_id</span><span class="ef-type">uuid FK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name ef-fk">bundle_id</span><span class="ef-type">uuid FK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">current_cost</span><span class="ef-type">decimal</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">estimated_cost</span><span class="ef-type">decimal</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">monthly_savings</span><span class="ef-type">decimal</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">ai_summary</span><span class="ef-type">text</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="entity-card">
+            <div class="entity-header">subscription_categories</div>
+            <div class="entity-fields">
+              <div class="entity-field">
+                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">name</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">icon</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">color</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">is_default</span><span class="ef-type">boolean</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="entity-card">
+            <div class="entity-header">notification_logs</div>
+            <div class="entity-fields">
+              <div class="entity-field">
+                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name ef-fk">subscription_id</span
+                ><span class="ef-type">uuid FK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">type</span><span class="ef-type">enum</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">status</span><span class="ef-type">enum</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">sent_to</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">sent_at</span><span class="ef-type">timestamp</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="entity-card">
+            <div class="entity-header">service_embeddings</div>
+            <div class="entity-fields">
+              <div class="entity-field">
+                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">service_name</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">content</span><span class="ef-type">text</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">embedding</span><span class="ef-type">vector(1536)</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">category</span><span class="ef-type">varchar</span>
+              </div>
+              <div class="entity-field">
+                <span class="ef-name">updated_at</span><span class="ef-type">timestamp</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider" />
+
+      <!-- PRICING -->
+      <section id="pricing">
+        <div class="section-num">06 &mdash; Monetization</div>
+        <h2 class="section-title">수익화 모델</h2>
+        <p class="section-sub">Freemium 구조로 빠른 사용자 확보 후 Pro 전환율 극대화.</p>
+
+        <div class="pricing-grid">
+          <div class="price-card">
+            <div class="price-tier">Free Tier</div>
+            <div class="price-amount"><sup>₩</sup>0<sub>/월</sub></div>
+            <div class="price-desc">
+              구독 관리의 핵심 기능을 무료로 제공. 서비스 가치 체험 후 자연스러운 Pro 전환 유도.
+            </div>
+            <div class="price-feature">구독 등록 최대 5개</div>
+            <div class="price-feature">갱신일 이메일 알림</div>
+            <div class="price-feature">기본 지출 요약</div>
+            <div class="price-feature muted">지출 분석 대시보드</div>
+            <div class="price-feature muted">AI 대체재 추천</div>
+            <div class="price-feature muted">번들 최적화 추천</div>
+            <div class="price-feature muted">AI 챗봇 어시스턴트</div>
+          </div>
+          <div class="price-card pro">
+            <div class="price-tier">Pro Tier</div>
+            <div class="price-amount"><sup>$</sup>5~9<sub>/월</sub></div>
+            <div class="price-desc">
+              무제한 구독 등록과 AI 기반 최적화 기능 전체 이용 가능. 번들 최적화 리포트 월 1회 갱신.
+            </div>
+            <div class="price-feature">구독 등록 무제한</div>
+            <div class="price-feature">갱신일 이메일 알림</div>
+            <div class="price-feature">전체 지출 분석 리포트</div>
+            <div class="price-feature">AI 기반 대체재 추천</div>
+            <div class="price-feature">통신사/네이버 번들 최적화</div>
+            <div class="price-feature">AI 챗봇 어시스턴트</div>
+            <div class="price-feature">번들 변경 알림 (요금제 개편 시)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer>
+        <div class="footer-left">Sub<span>Lens</span></div>
+        <div class="footer-meta">
+          Project Proposal v1.0<br />
+          작성일: 2026년 3월<br />
+          기술 스택: Spring Boot · Next.js · PostgreSQL · Claude API
+        </div>
+      </footer>
+
+      <script>
+        // Intersection Observer for animations
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.style.opacity = "1";
+                entry.target.style.transform = "none";
+              }
+            });
+          },
+          { threshold: 0.1 }
+        );
+
+        document
+          .querySelectorAll(
+            ".roadmap-item, .stack-card, .feature-block, .provider-card, .entity-card"
+          )
+          .forEach((el) => {
+            el.style.opacity = "0";
+            el.style.transform = "translateY(20px)";
+            el.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+            observer.observe(el);
+          });
+      </script>
+    </body>
+  </html>
+</T>

@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pkms}
-    username: ${SPRING_DATASOURCE_USERNAME:pkms}
-    password: ${SPRING_DATASOURCE_PASSWORD:pkms123}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sublens}
+    username: ${SPRING_DATASOURCE_USERNAME:sublens}
+    password: ${SPRING_DATASOURCE_PASSWORD:sublens0223}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -19,10 +19,8 @@ spring:
       port: ${SPRING_REDIS_PORT:6379}
 jwt:
   secret: 0d5ad301f9af1047ba94371c2f281da7d93ab508c55de822834deae2892fb1b6
-  #  access-token-expiration: 1800000 # 30분
-  #  refresh-token-expiration: 86400000 # 24시간
-  access-token-expiration: 10000 # 10초
-  refresh-token-expiration: 600000 # 10분
+  access-token-expiration: 3600000 # 1시간
+  refresh-token-expiration: 86400000 # 24시간
 resend:
   api:
     key: ${RESEND_API_KEY:re_EF3JmSXy_KbxEjomRa49ayDDrC2Ed9iB9}

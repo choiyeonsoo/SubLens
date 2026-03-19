@@ -1,7 +1,7 @@
 export interface SubscriptionListRequest {
-  status?: 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'ALL';
+  status?: "ACTIVE" | "PAUSED" | "CANCELLED" | "ALL";
   categoryId?: string;
-  sort?: 'next_billing_date' | 'amount' | 'created_at';
+  sort?: "next_billing_date" | "amount" | "created_at";
 }
 
 export interface SubscriptionCreateRequest {
@@ -11,8 +11,8 @@ export interface SubscriptionCreateRequest {
   logoUrl?: string;
   color?: string;
   amount: number;
-  currency: 'KRW' | 'USD' | 'EUR' | 'JPY' | 'GBP';
-  billingCycle: 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  currency: "KRW" | "USD" | "EUR" | "JPY" | "GBP";
+  billingCycle: "WEEKLY" | "MONTHLY" | "YEARLY";
   startDate?: string;
   nextBillingDate: string;
   notifyBefore?: boolean;
@@ -27,14 +27,12 @@ export interface SubscriptionResponse {
   id: string;
   serviceName: string;
   description?: string;
-  logoUrl?: string;
-  color?: string;
   amount: number;
   currency: string;
   billingCycle: string;
   nextBillingDate: string;
   startDate: string;
-  status: 'ACTIVE' | 'PAUSED' | 'CANCELLED';
+  status: "ACTIVE" | "PAUSED" | "CANCELLED";
   notifyBefore: boolean;
   notifyDaysBefore: number;
   category?: {
@@ -51,4 +49,11 @@ export interface CategoryResponse {
   icon: string;
   color: string;
   isDefault: boolean;
+}
+
+export interface SubscriptionServiceItem {
+  id: string;
+  name: string;
+  category: string;
+  logoUrl: string;
 }

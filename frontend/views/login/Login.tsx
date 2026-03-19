@@ -1,22 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLogin } from "@/features/auth/hooks";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Layers } from "lucide-react";
+import api from "@/lib/axios";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function LoginView() {
   const router = useRouter();
+  const { user, isLoading, setUser } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { mutate, isPending, isError, error } = useLogin();
+
+  // 이미 로그인된 경우 리다이렉트
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [isLoading, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isLoading || user) return null;
 
   const handleLogin = (e: { preventDefault(): void }) => {
     e.preventDefault();
     mutate(
       { email, password },
-      { onSuccess: () => router.push("/dashboard") }
+      {
+        onSuccess: async () => {
+          // 로그인 후 스토어에 사용자 정보 채우기
+          const res = await api.get("/api/auth/me");
+          setUser(res.data.data);
+          router.push("/dashboard");
+        },
+      }
     );
   };
 
@@ -78,15 +97,24 @@ export default function LoginView() {
           </button>
 
           <div className="mt-5 flex items-center justify-center gap-0 text-sm text-gray-400 dark:text-gray-500">
-            <Link href="/find-id" className="px-2 hover:text-gray-600 hover:underline dark:hover:text-gray-300">
+            <Link
+              href="/find-id"
+              className="px-2 hover:text-gray-600 hover:underline dark:hover:text-gray-300"
+            >
               아이디 찾기
             </Link>
             <span className="border-l border-gray-200 dark:border-gray-700 h-3" />
-            <Link href="/reset-password" className="px-2 hover:text-gray-600 hover:underline dark:hover:text-gray-300">
+            <Link
+              href="/reset-password"
+              className="px-2 hover:text-gray-600 hover:underline dark:hover:text-gray-300"
+            >
               비밀번호 찾기
             </Link>
             <span className="border-l border-gray-200 dark:border-gray-700 h-3" />
-            <Link href="/signup" className="px-2 font-medium text-violet-600 hover:underline dark:text-violet-400">
+            <Link
+              href="/signup"
+              className="px-2 font-medium text-violet-600 hover:underline dark:text-violet-400"
+            >
               회원가입
             </Link>
           </div>
