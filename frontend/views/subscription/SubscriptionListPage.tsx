@@ -1,26 +1,27 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
-import { useSubscriptions } from '@/features/subscription/hooks';
-import type { SubscriptionListRequest, SubscriptionResponse } from '@/features/subscription/types';
-import SubscriptionCard from './SubscriptionCard';
-import SubscriptionFormModal from './SubscriptionFormModal';
+import { useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useSubscriptions } from "@/features/subscription/hooks";
+import type { SubscriptionListRequest, SubscriptionResponse } from "@/features/subscription/types";
+import SubscriptionCard from "./SubscriptionCard";
+import SubscriptionFormModal from "./SubscriptionFormModal";
+import Select from "@/components/ui/Select";
 
-type StatusFilter = 'ALL' | 'ACTIVE' | 'PAUSED' | 'CANCELLED';
-type SortOption = SubscriptionListRequest['sort'];
+type StatusFilter = "ALL" | "ACTIVE" | "PAUSED" | "CANCELLED";
+type SortOption = SubscriptionListRequest["sort"];
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: 'ALL', label: '전체' },
-  { value: 'ACTIVE', label: '활성' },
-  { value: 'PAUSED', label: '일시정지' },
-  { value: 'CANCELLED', label: '해지' },
+  { value: "ALL", label: "전체" },
+  { value: "ACTIVE", label: "활성" },
+  { value: "PAUSED", label: "일시정지" },
+  { value: "CANCELLED", label: "해지" },
 ];
 
 const SORT_OPTIONS: { value: NonNullable<SortOption>; label: string }[] = [
-  { value: 'created_at', label: '최근 등록순' },
-  { value: 'next_billing_date', label: '갱신일순' },
-  { value: 'amount', label: '금액 높은순' },
+  { value: "created_at", label: "최근 등록순" },
+  { value: "next_billing_date", label: "갱신일순" },
+  { value: "amount", label: "금액 높은순" },
 ];
 
 function SkeletonCard() {
@@ -43,9 +44,9 @@ function SkeletonCard() {
 }
 
 export default function SubscriptionListPage() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
-  const [sort, setSort] = useState<NonNullable<SortOption>>('created_at');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [sort, setSort] = useState<NonNullable<SortOption>>("created_at");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<SubscriptionResponse | null>(null);
@@ -57,9 +58,7 @@ export default function SubscriptionListPage() {
   const { data: subscriptions = [], isLoading, isError } = useSubscriptions(queryReq);
 
   const filtered = search.trim()
-    ? subscriptions.filter((s) =>
-        s.serviceName.toLowerCase().includes(search.trim().toLowerCase()),
-      )
+    ? subscriptions.filter((s) => s.serviceName.toLowerCase().includes(search.trim().toLowerCase()))
     : subscriptions;
 
   const openCreate = () => {
@@ -119,8 +118,8 @@ export default function SubscriptionListPage() {
                 onClick={() => setStatusFilter(value)}
                 className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   statusFilter === value
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                    ? "bg-violet-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                 }`}
               >
                 {label}
@@ -129,15 +128,12 @@ export default function SubscriptionListPage() {
           </div>
 
           {/* 정렬 */}
-          <select
+          <Select
             value={sort}
-            onChange={(e) => setSort(e.target.value as NonNullable<SortOption>)}
-            className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs outline-none transition-colors focus:ring-2 focus:ring-violet-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-          >
-            {SORT_OPTIONS.map(({ value, label }) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
+            onChange={(v) => setSort(v as NonNullable<SortOption>)}
+            placeholder="정렬 선택"
+            options={SORT_OPTIONS.map(({ value, label }) => ({ value, label }))}
+          />
         </div>
       </div>
 
@@ -155,15 +151,14 @@ export default function SubscriptionListPage() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 py-16 dark:border-gray-700">
           <p className="text-sm text-gray-400 dark:text-gray-500">
-            {search ? `'${search}'에 해당하는 구독이 없어요` : '등록된 구독이 없어요'}
+            {search ? `'${search}'에 해당하는 구독이 없어요` : "등록된 구독이 없어요"}
           </p>
           {!search && (
             <button
               onClick={openCreate}
               className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-700"
             >
-              <Plus className="h-4 w-4" />
-              첫 구독 추가하기
+              <Plus className="h-4 w-4" />첫 구독 추가하기
             </button>
           )}
         </div>

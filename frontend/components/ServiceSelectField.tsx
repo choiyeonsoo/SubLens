@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { ExternalLink } from "lucide-react";
 import { useSubscriptionServices } from "@/features/subscription/hooks";
 import type { SubscriptionServiceItem } from "@/features/subscription/types";
 

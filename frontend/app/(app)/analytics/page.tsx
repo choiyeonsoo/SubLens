@@ -1,3 +1,5 @@
-export default function AnalyticsPage() {
-  return <div />;
+import AnalyticsPage from "@/views/analytics/AnalyticsPage";
+
+export default function Page() {
+  return <AnalyticsPage />;
 }

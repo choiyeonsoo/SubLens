@@ -20,7 +20,18 @@
       "Bash(findstr :3000)",
       "Bash(taskkill /PID 13412 /F)",
       "Bash(cmd /c \"taskkill /PID 13412 /F\")",
-      "Bash(cmd /c \"taskkill /PID 13412 /F 2>&1\")"
+      "Bash(cmd /c \"taskkill /PID 13412 /F 2>&1\")",
+      "Bash(npx shadcn@latest init --yes --base-color slate)",
+      "Bash(npx shadcn@latest init --help)",
+      "Bash(npx shadcn@latest init -f)",
+      "Bash(npx shadcn@latest init --defaults -f)",
+      "Bash(npx shadcn@latest add badge select dropdown-menu input --yes -f)",
+      "Bash(npx shadcn@latest add --help)",
+      "Bash(npx shadcn@latest add badge select dropdown-menu input -y -o)",
+      "Bash(npx shadcn@latest add sonner -y -o)",
+      "Bash(xargs cat:*)",
+      "Bash(ls -la /d/sublens/frontend/app/\\\\\\(app\\\\\\)/)",
+      "Bash(find d:/sublens -name *.html -o -name *.md)"
     ]
   }
 }

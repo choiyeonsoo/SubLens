@@ -8,14 +8,18 @@ public record SubscriptionServiceResponse(
     UUID   id,
     String name,
     String category,
-    String logoUrl
+    String logoDomain,
+    String logoUrl,
+    String websiteUrl
 ) {
     public static SubscriptionServiceResponse from(ServiceCatalog s) {
         return new SubscriptionServiceResponse(
             s.getId(),
             s.getName(),
             s.getCategory().getName(),
-            "https://www.google.com/s2/favicons?domain=" + s.getLogoDomain() + "&sz=64"
+            s.getLogoDomain(),
+            "https://www.google.com/s2/favicons?domain=" + s.getLogoDomain() + "&sz=64",
+            s.getWebsiteUrl()
         );
     }
 }

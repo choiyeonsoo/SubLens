@@ -76,6 +76,15 @@ public class Subscription {
     @Column(name = "next_billing_date", nullable = false)
     private LocalDate nextBillingDate;
 
+    @Column(name = "billing_day_of_month")
+    private Integer billingDayOfMonth;
+
+    @Column(name = "billing_day_of_week")
+    private Integer billingDayOfWeek;
+
+    @Column(name = "billing_date_of_year", length = 4)
+    private String billingDateOfYear;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)

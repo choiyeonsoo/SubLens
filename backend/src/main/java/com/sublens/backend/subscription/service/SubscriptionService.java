@@ -41,6 +41,7 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionCategoryRepository categoryRepository;
+    private final BillingDateCalculator billingDateCalculator;
 
     // ── 현재 유저 헬퍼 ──────────────────────────────────────────────
 
@@ -93,7 +94,9 @@ public class SubscriptionService {
     public SubscriptionResponse create(SubscriptionCreateRequest request) {
         UUID userId = getCurrentUserId();
 
-        validateNextBillingDate(request.getNextBillingDate());
+        BillingCycle cycle = request.getBillingCycle() != null ? request.getBillingCycle() : BillingCycle.MONTHLY;
+        validateBillingDayFields(cycle, request.getBillingDayOfMonth(),
+                request.getBillingDayOfWeek(), request.getBillingDateOfYear());
 
         if (isFreePlan()) {
             long activeCount = subscriptionRepository.countByUserIdAndStatus(userId, SubscriptionStatus.ACTIVE);
@@ -101,6 +104,12 @@ public class SubscriptionService {
                 throw new BusinessException(ErrorCode.SUBSCRIPTION_LIMIT_EXCEEDED);
             }
         }
+
+        LocalDate nextBillingDate = billingDateCalculator.calculate(
+                cycle,
+                request.getBillingDayOfMonth(),
+                request.getBillingDayOfWeek(),
+                request.getBillingDateOfYear());
 
         SubscriptionCategory category = resolveCategory(request.getCategoryId());
 
@@ -112,10 +121,12 @@ public class SubscriptionService {
                 .amount(request.getAmount())
                 .currency(request.getCurrency() != null ? request.getCurrency() :
                         com.sublens.backend.subscription.enums.Currency.KRW)
-                .billingCycle(request.getBillingCycle() != null ? request.getBillingCycle() :
-                        BillingCycle.MONTHLY)
+                .billingCycle(cycle)
                 .startDate(request.getStartDate() != null ? request.getStartDate() : LocalDate.now())
-                .nextBillingDate(request.getNextBillingDate())
+                .nextBillingDate(nextBillingDate)
+                .billingDayOfMonth(request.getBillingDayOfMonth())
+                .billingDayOfWeek(request.getBillingDayOfWeek())
+                .billingDateOfYear(request.getBillingDateOfYear())
                 .notifyBefore(request.isNotifyBefore())
                 .notifyDaysBefore((short) request.getNotifyDaysBefore())
                 .build();
@@ -131,7 +142,15 @@ public class SubscriptionService {
     public SubscriptionResponse update(SubscriptionUpdateRequest request) {
         Subscription subscription = findAndVerifyOwner(request.getId());
 
-        validateNextBillingDate(request.getNextBillingDate());
+        BillingCycle cycle = request.getBillingCycle() != null ? request.getBillingCycle() : subscription.getBillingCycle();
+        validateBillingDayFields(cycle, request.getBillingDayOfMonth(),
+                request.getBillingDayOfWeek(), request.getBillingDateOfYear());
+
+        LocalDate nextBillingDate = billingDateCalculator.calculate(
+                cycle,
+                request.getBillingDayOfMonth(),
+                request.getBillingDayOfWeek(),
+                request.getBillingDateOfYear());
 
         SubscriptionCategory category = resolveCategory(request.getCategoryId());
 
@@ -140,9 +159,12 @@ public class SubscriptionService {
         subscription.setDescription(request.getDescription());
         subscription.setAmount(request.getAmount());
         if (request.getCurrency() != null) subscription.setCurrency(request.getCurrency());
-        if (request.getBillingCycle() != null) subscription.setBillingCycle(request.getBillingCycle());
+        subscription.setBillingCycle(cycle);
         if (request.getStartDate() != null) subscription.setStartDate(request.getStartDate());
-        subscription.setNextBillingDate(request.getNextBillingDate());
+        subscription.setNextBillingDate(nextBillingDate);
+        subscription.setBillingDayOfMonth(request.getBillingDayOfMonth());
+        subscription.setBillingDayOfWeek(request.getBillingDayOfWeek());
+        subscription.setBillingDateOfYear(request.getBillingDateOfYear());
         subscription.setNotifyBefore(request.isNotifyBefore());
         subscription.setNotifyDaysBefore((short) request.getNotifyDaysBefore());
 
@@ -217,9 +239,21 @@ public class SubscriptionService {
         return subscription;
     }
 
-    private void validateNextBillingDate(LocalDate nextBillingDate) {
-        if (nextBillingDate != null && !nextBillingDate.isAfter(LocalDate.now().minusDays(1))) {
-            throw new BusinessException(ErrorCode.INVALID_BILLING_DATE);
+    private void validateBillingDayFields(BillingCycle cycle, Integer dayOfMonth,
+            Integer dayOfWeek, String dateOfYear) {
+        switch (cycle) {
+            case MONTHLY -> {
+                if (dayOfMonth == null)
+                    throw new BusinessException(ErrorCode.INVALID_BILLING_DAY);
+            }
+            case WEEKLY -> {
+                if (dayOfWeek == null)
+                    throw new BusinessException(ErrorCode.INVALID_BILLING_DAY);
+            }
+            case YEARLY -> {
+                if (dateOfYear == null || !dateOfYear.matches("^(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$"))
+                    throw new BusinessException(ErrorCode.INVALID_BILLING_DAY);
+            }
         }
     }
 
@@ -231,16 +265,16 @@ public class SubscriptionService {
     private BigDecimal toMonthlyAmount(BigDecimal amount, BillingCycle cycle) {
         return switch (cycle) {
             case MONTHLY -> amount;
-            case YEARLY -> amount.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
-            case WEEKLY -> amount.multiply(BigDecimal.valueOf(4));
+            case YEARLY  -> amount.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+            case WEEKLY  -> amount.multiply(BigDecimal.valueOf(4));
         };
     }
 
     private Sort buildSort(String sort) {
         return switch (sort == null ? "created_at" : sort) {
             case "next_billing_date" -> Sort.by(Sort.Direction.ASC, "nextBillingDate");
-            case "amount" -> Sort.by(Sort.Direction.DESC, "amount");
-            default -> Sort.by(Sort.Direction.DESC, "createdAt");
+            case "amount"            -> Sort.by(Sort.Direction.DESC, "amount");
+            default                  -> Sort.by(Sort.Direction.DESC, "createdAt");
         };
     }
 }

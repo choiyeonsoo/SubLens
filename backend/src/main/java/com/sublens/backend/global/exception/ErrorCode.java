@@ -28,7 +28,14 @@ public enum ErrorCode {
     SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "구독 정보를 찾을 수 없습니다."),
     SUBSCRIPTION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 구독에 접근 권한이 없습니다."),
     SUBSCRIPTION_LIMIT_EXCEEDED(HttpStatus.FORBIDDEN, "무료 플랜은 최대 5개의 구독만 등록할 수 있습니다."),
-    INVALID_BILLING_DATE(HttpStatus.BAD_REQUEST, "청구일은 오늘 이후여야 합니다.");
+    INVALID_BILLING_DATE(HttpStatus.BAD_REQUEST, "청구일은 오늘 이후여야 합니다."),
+    INVALID_BILLING_DAY(HttpStatus.BAD_REQUEST, "청구 기준일 정보가 올바르지 않습니다."),
+
+    // ADMIN
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    SERVICE_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "서비스 카테고리를 찾을 수 없습니다."),
+    SERVICE_CATEGORY_IN_USE(HttpStatus.CONFLICT, "해당 카테고리를 참조하는 서비스가 존재하여 삭제할 수 없습니다."),
+    SUBSCRIPTION_SERVICE_NOT_FOUND(HttpStatus.NOT_FOUND, "구독 서비스를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

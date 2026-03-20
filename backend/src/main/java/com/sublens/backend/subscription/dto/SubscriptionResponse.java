@@ -31,6 +31,9 @@ public class SubscriptionResponse {
     private SubscriptionStatus status;
     private boolean notifyBefore;
     private int notifyDaysBefore;
+    private Integer billingDayOfMonth;
+    private Integer billingDayOfWeek;
+    private String billingDateOfYear;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -49,6 +52,9 @@ public class SubscriptionResponse {
                 s.getStatus(),
                 s.isNotifyBefore(),
                 s.getNotifyDaysBefore(),
+                s.getBillingDayOfMonth(),
+                s.getBillingDayOfWeek(),
+                s.getBillingDateOfYear(),
                 s.getCreatedAt(),
                 s.getUpdatedAt());
     }
