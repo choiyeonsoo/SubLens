@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useTheme } from "next-themes";
 import {
   BarChart,
   Bar,
@@ -162,6 +163,7 @@ export default function AnalyticsPage() {
   const { data: allSubs = [], isLoading } = useSubscriptions({ status: "ALL" });
   const { data: services = [] } = useSubscriptionServices();
   const [period, setPeriod] = useState<Period>("6m");
+  const { resolvedTheme } = useTheme();
 
   const activeSubs = useMemo(
     () => allSubs.filter((s) => s.status === "ACTIVE"),
@@ -463,7 +465,7 @@ export default function AnalyticsPage() {
                       border: "1px solid #e5e7eb",
                       fontSize: 12,
                     }}
-                    cursor={{ fill: "#f5f3ff" }}
+                    cursor={{ fill: resolvedTheme === "dark" ? "rgba(124, 58, 237, 0.15)" : "#f5f3ff" }}
                   />
                   <Bar dataKey="amount" fill="#7C3AED" radius={[4, 4, 0, 0]} maxBarSize={48} />
                 </BarChart>

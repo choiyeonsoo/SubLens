@@ -31,7 +31,8 @@
       "Bash(npx shadcn@latest add sonner -y -o)",
       "Bash(xargs cat:*)",
       "Bash(ls -la /d/sublens/frontend/app/\\\\\\(app\\\\\\)/)",
-      "Bash(find d:/sublens -name *.html -o -name *.md)"
+      "Bash(find d:/sublens -name *.html -o -name *.md)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

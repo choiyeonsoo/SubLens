@@ -454,7 +454,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button variant="default" onClick={handleSubmit} disabled={isPending}>
+          <Button variant="primary" onClick={handleSubmit} disabled={isPending}>
             {isPending ? "저장 중..." : isEdit ? "수정" : "추가"}
           </Button>
         </div>

@@ -167,10 +167,10 @@ export default function AdminCategoriesPage() {
                 />
               </div>
               <div className="flex gap-2 pt-2">
-                <Button type="button" variant="outline" className="flex-1" onClick={closeModal}>
+                <Button type="button" variant="ghost" className="flex-1" onClick={closeModal}>
                   취소
                 </Button>
-                <Button type="submit" className="flex-1" disabled={isPending}>
+                <Button type="submit" variant="primary" className="flex-1" disabled={isPending}>
                   {isPending ? "저장 중…" : "저장"}
                 </Button>
               </div>

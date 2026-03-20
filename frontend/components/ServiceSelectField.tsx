@@ -101,7 +101,7 @@ export default function ServiceSelectField({ value, onChange, error }: Props) {
             />
           )}
           <span
-            className={selected || isDirect ? "text-gray-900 dark:text-white" : "text-gray-400"}
+            className={selected || isDirect ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"}
           >
             {isLoading ? "불러오는 중..." : triggerLabel}
           </span>
@@ -147,7 +147,7 @@ export default function ServiceSelectField({ value, onChange, error }: Props) {
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   ✕
                 </button>

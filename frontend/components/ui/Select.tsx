@@ -42,7 +42,7 @@ export default function Select({ value, onChange, options, placeholder = '선택
         onClick={() => setOpen((v) => !v)}
         className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm outline-none transition-colors focus:ring-2 focus:ring-violet-500 dark:bg-gray-800 dark:text-white ${borderClass}`}
       >
-        <span className={selected ? 'text-gray-900 dark:text-white' : 'text-gray-400'}>
+        <span className={selected ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}>
           {selected?.label ?? placeholder}
         </span>
         <svg
