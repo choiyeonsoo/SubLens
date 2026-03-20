@@ -15,6 +15,8 @@ import {
   Moon,
   BookOpen,
   ChevronUp,
+  Tags,
+  AppWindow,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTheme } from "next-themes";
@@ -113,6 +115,29 @@ export default function Sidebar() {
             ))}
           </ul>
         </div>
+
+        {/* 관리자 섹션 — ADMIN 전용 */}
+        {user?.role === "ADMIN" && (
+          <div>
+            <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-violet-400 dark:text-violet-500">
+              관리자
+            </p>
+            <ul className="space-y-0.5">
+              <li>
+                <Link href="/admin/services" className={navItemClass("/admin/services")}>
+                  <AppWindow className="h-4 w-4 shrink-0" />
+                  서비스 관리
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin/categories" className={navItemClass("/admin/categories")}>
+                  <Tags className="h-4 w-4 shrink-0" />
+                  카테고리 관리
+                </Link>
+              </li>
+            </ul>
+          </div>
+        )}
       </nav>
 
       {/* 유저 정보 + 팝업 메뉴 */}

@@ -8,13 +8,14 @@ export interface SubscriptionCreateRequest {
   serviceName: string;
   description?: string;
   categoryId?: string;
-  logoUrl?: string;
-  color?: string;
   amount: number;
   currency: "KRW" | "USD" | "EUR" | "JPY" | "GBP";
   billingCycle: "WEEKLY" | "MONTHLY" | "YEARLY";
   startDate?: string;
-  nextBillingDate: string;
+  // 청구 기준일 (billingCycle에 따라 하나만 전송)
+  billingDayOfMonth?: number;  // MONTHLY 전용 (1~31)
+  billingDayOfWeek?: number;   // WEEKLY 전용 (1=월 ~ 7=일)
+  billingDateOfYear?: string;  // YEARLY 전용 ("MMDD", 예: "0319")
   notifyBefore?: boolean;
   notifyDaysBefore?: number;
 }
@@ -35,6 +36,9 @@ export interface SubscriptionResponse {
   status: "ACTIVE" | "PAUSED" | "CANCELLED";
   notifyBefore: boolean;
   notifyDaysBefore: number;
+  billingDayOfMonth?: number;
+  billingDayOfWeek?: number;
+  billingDateOfYear?: string;
   category?: {
     id: string;
     name: string;
@@ -55,5 +59,7 @@ export interface SubscriptionServiceItem {
   id: string;
   name: string;
   category: string;
+  logoDomain: string;
   logoUrl: string;
+  websiteUrl?: string;
 }

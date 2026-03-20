@@ -1,4 +1,12 @@
 import axios from "axios";
+import { toast } from "sonner";
+
+export interface ApiError {
+  success: false;
+  code: string;
+  message: string;
+  data: null;
+}
 
 // 🔹 일반 API 인스턴스 (인터셉터 있음)
 const api = axios.create({
@@ -55,10 +63,19 @@ api.interceptors.response.use(
 
         await plainApi.post("/api/auth/logout").catch(() => {});
 
-        window.location.href = "/login";
+        // 이미 /login 이면 재이동 금지 (무한 루프 방지)
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
 
         return Promise.reject(refreshError);
       }
+    }
+
+    // 401이 아닌 에러: ApiError 파싱 후 Toast 표시
+    if (error.response?.status !== 401) {
+      const apiError = error.response?.data as ApiError | undefined;
+      toast.error(apiError?.message ?? "요청 처리 중 오류가 발생했습니다.");
     }
 
     return Promise.reject(error);

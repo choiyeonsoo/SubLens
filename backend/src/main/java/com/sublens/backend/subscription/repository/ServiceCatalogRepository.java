@@ -18,4 +18,13 @@ public interface ServiceCatalogRepository
         ORDER BY c.displayOrder ASC, s.displayOrder ASC
     """)
     List<ServiceCatalog> findAllActiveOrdered();
+
+    @Query("""
+        SELECT s FROM ServiceCatalog s
+        JOIN FETCH s.category c
+        ORDER BY c.displayOrder ASC, s.displayOrder ASC
+    """)
+    List<ServiceCatalog> findAllOrderedForAdmin();
+
+    boolean existsByCategoryId(UUID categoryId);
 }

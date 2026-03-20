@@ -1,26 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLogin } from "@/features/auth/hooks";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Layers } from "lucide-react";
-import api from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export default function LoginView() {
-  const router = useRouter();
-  const { user, isLoading, setUser } = useAuthStore();
+  const { user, isLoading } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { mutate, isPending, isError, error } = useLogin();
-
-  // 이미 로그인된 경우 리다이렉트
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.replace("/dashboard");
-    }
-  }, [isLoading, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading || user) return null;
 
@@ -29,11 +19,10 @@ export default function LoginView() {
     mutate(
       { email, password },
       {
-        onSuccess: async () => {
-          // 로그인 후 스토어에 사용자 정보 채우기
-          const res = await api.get("/api/auth/me");
-          setUser(res.data.data);
-          router.push("/dashboard");
+        onSuccess: () => {
+          // 로그인 성공 → full reload로 /dashboard 이동
+          // AuthProvider가 me를 호출해 사용자 상태 초기화
+          window.location.replace("/dashboard");
         },
       }
     );

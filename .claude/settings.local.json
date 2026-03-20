@@ -2,27 +2,36 @@
   "permissions": {
     "allow": [
       "Bash(docker exec:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose down:*)",
       "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/\")",
       "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/dashboard/\")",
       "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/login/\")",
       "Bash(ls -la \"/d/sublens/frontend/app/\\(auth\\)/signup/\")",
       "Bash(npm install:*)",
+      "Bash(npm run:*)",
       "Bash(./gradlew clean:*)",
-      "Bash(docker ps:*)",
+      "Bash(./gradlew build:*)",
       "Bash(netstat -ano)",
       "Bash(findstr :8080)",
       "Bash(findstr LISTENING)",
-      "Bash(docker-compose down:*)",
-      "Bash(./gradlew build:*)",
-      "Bash(npm run:*)",
-      "Bash(docker compose:*)",
-      "Bash(git -C d:/pkms status)",
-      "Bash(git -C d:/pkms diff HEAD)",
-      "Bash(git -C d:/pkms diff HEAD -- frontend/features/ frontend/lib/axios.ts frontend/package.json frontend/providers/ frontend/app/ frontend/views/ frontend/components/layout/)",
-      "Bash(git -C d:/pkms diff HEAD -- frontend/features/subscription/hooks.ts frontend/features/subscription/types.ts frontend/features/auth/ frontend/lib/axios.ts frontend/views/login/ frontend/views/dashboard/ frontend/views/subscription/SubscriptionListPage.tsx)"
-    ],
-    "additionalDirectories": [
-      "D:\\pkms"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/login)",
+      "Bash(findstr :3000)",
+      "Bash(taskkill /PID 13412 /F)",
+      "Bash(cmd /c \"taskkill /PID 13412 /F\")",
+      "Bash(cmd /c \"taskkill /PID 13412 /F 2>&1\")",
+      "Bash(npx shadcn@latest init --yes --base-color slate)",
+      "Bash(npx shadcn@latest init --help)",
+      "Bash(npx shadcn@latest init -f)",
+      "Bash(npx shadcn@latest init --defaults -f)",
+      "Bash(npx shadcn@latest add badge select dropdown-menu input --yes -f)",
+      "Bash(npx shadcn@latest add --help)",
+      "Bash(npx shadcn@latest add badge select dropdown-menu input -y -o)",
+      "Bash(npx shadcn@latest add sonner -y -o)",
+      "Bash(xargs cat:*)",
+      "Bash(ls -la /d/sublens/frontend/app/\\\\\\(app\\\\\\)/)",
+      "Bash(find d:/sublens -name *.html -o -name *.md)"
     ]
   }
 }

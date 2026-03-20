@@ -15,13 +15,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "subscription_services")
 @Getter
+@Setter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class ServiceCatalog {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -34,11 +40,14 @@ public class ServiceCatalog {
     @JoinColumn(name = "category_id", nullable = false)
     private ServiceCategory category;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = true, length = 100)
     private String logoDomain;
 
     @Column(nullable = false)
     private int displayOrder;
+
+    @Column(name = "website_url", length = 255)
+    private String websiteUrl;
 
     @Column(nullable = false)
     private boolean isActive = true;

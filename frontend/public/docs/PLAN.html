@@ -1,1665 +1,3327 @@
-<!DOCTYPE html>
-  <html lang="ko">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>SubLens — 프로젝트 기획서</title>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet"
-      />
-      <style>
-        :root {
-          --bg: #080b12;
-          --bg2: #0d1120;
-          --bg3: #111827;
-          --accent: #6c63ff;
-          --accent2: #38bdf8;
-          --accent3: #34d399;
-          --warn: #f59e0b;
-          --text: #e8eaf0;
-          --muted: #6b7280;
-          --border: rgba(255, 255, 255, 0.07);
-          --card: rgba(255, 255, 255, 0.03);
-        }
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SubLens — 프로젝트 기획서 v2.0</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080b12;
+        --bg2: #0d1120;
+        --bg3: #111827;
+        --accent: #6c63ff;
+        --accent2: #38bdf8;
+        --accent3: #34d399;
+        --warn: #f59e0b;
+        --text: #e8eaf0;
+        --muted: #6b7280;
+        --border: rgba(255, 255, 255, 0.07);
+        --card: rgba(255, 255, 255, 0.03);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Noto Sans KR", sans-serif;
+        font-weight: 300;
+        line-height: 1.7;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.4;
+      }
+      .orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(120px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .orb1 {
+        width: 600px;
+        height: 600px;
+        background: rgba(108, 99, 255, 0.12);
+        top: -200px;
+        right: -200px;
+      }
+      .orb2 {
+        width: 400px;
+        height: 400px;
+        background: rgba(56, 189, 248, 0.08);
+        bottom: 20%;
+        left: -150px;
+      }
 
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        padding: 20px 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(8, 11, 18, 0.7);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-logo {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 1.3rem;
+        letter-spacing: -0.02em;
+        color: #fff;
+      }
+      .nav-logo span {
+        color: var(--accent);
+      }
+      .nav-links {
+        display: flex;
+        gap: 28px;
+        list-style: none;
+      }
+      .nav-links a {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--muted);
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: color 0.2s;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+      }
+      .nav-badge {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent3);
+        border: 1px solid var(--accent3);
+        padding: 4px 12px;
+        border-radius: 20px;
+      }
 
-        html {
-          scroll-behavior: smooth;
-        }
+      section {
+        position: relative;
+        z-index: 1;
+        padding: 100px 60px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-top: 120px;
+        max-width: 100%;
+        padding-left: 60px;
+        padding-right: 60px;
+      }
+      .hero-eyebrow {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .hero-eyebrow::before {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 1px;
+        background: var(--accent);
+      }
+      .hero h1 {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: clamp(3.5rem, 8vw, 7rem);
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+        color: #fff;
+        margin-bottom: 32px;
+      }
+      .hero h1 .outline {
+        -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+        color: transparent;
+      }
+      .hero h1 .accent-word {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .hero-desc {
+        font-size: 1.1rem;
+        color: var(--muted);
+        max-width: 560px;
+        margin-bottom: 48px;
+        line-height: 1.8;
+      }
+      .hero-stats {
+        display: flex;
+        gap: 48px;
+        border-top: 1px solid var(--border);
+        padding-top: 40px;
+        margin-top: 40px;
+      }
+      .stat-num {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 2rem;
+        color: #fff;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .stat-num span {
+        color: var(--accent);
+      }
+      .stat-label {
+        font-size: 0.75rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
 
-        body {
-          background: var(--bg);
-          color: var(--text);
-          font-family: "Noto Sans KR", sans-serif;
-          font-weight: 300;
-          line-height: 1.7;
-          overflow-x: hidden;
-        }
+      .section-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .section-num::after {
+        content: "";
+        flex: 1;
+        max-width: 40px;
+        height: 1px;
+        background: var(--accent);
+      }
+      .section-title {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        color: #fff;
+        margin-bottom: 16px;
+      }
+      .section-sub {
+        color: var(--muted);
+        font-size: 1rem;
+        max-width: 560px;
+        margin-bottom: 64px;
+      }
 
-        /* ── NOISE OVERLAY ── */
-        body::before {
-          content: "";
-          position: fixed;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-          pointer-events: none;
-          z-index: 0;
-          opacity: 0.4;
-        }
+      .overview-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 40px;
+      }
+      .overview-cell {
+        background: var(--bg2);
+        padding: 40px;
+      }
+      .overview-cell:first-child {
+        grid-column: 1/-1;
+        background: linear-gradient(
+          135deg,
+          rgba(108, 99, 255, 0.1) 0%,
+          rgba(56, 189, 248, 0.05) 100%
+        );
+        border-bottom: 1px solid var(--border);
+      }
+      .oc-label {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: 10px;
+      }
+      .oc-value {
+        font-size: 1rem;
+        color: var(--text);
+        font-weight: 400;
+        line-height: 1.6;
+      }
+      .oc-value.large {
+        font-family: "Syne", sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #fff;
+      }
 
-        /* ── GLOW ORBS ── */
-        .orb {
-          position: fixed;
-          border-radius: 50%;
-          filter: blur(120px);
-          pointer-events: none;
-          z-index: 0;
-        }
-        .orb1 {
-          width: 600px;
-          height: 600px;
-          background: rgba(108, 99, 255, 0.12);
-          top: -200px;
-          right: -200px;
-        }
-        .orb2 {
-          width: 400px;
-          height: 400px;
-          background: rgba(56, 189, 248, 0.08);
-          bottom: 20%;
-          left: -150px;
-        }
+      .stack-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .stack-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 28px;
+        transition:
+          border-color 0.2s,
+          transform 0.2s;
+      }
+      .stack-card:hover {
+        border-color: rgba(108, 99, 255, 0.3);
+        transform: translateY(-4px);
+      }
+      .stack-icon {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+      }
+      .stack-name {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        color: #fff;
+        margin-bottom: 8px;
+      }
+      .stack-detail {
+        font-size: 0.8rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .stack-tag {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 3px 10px;
+        background: rgba(108, 99, 255, 0.1);
+        border: 1px solid rgba(108, 99, 255, 0.2);
+        border-radius: 20px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+      }
 
-        /* ── NAV ── */
-        nav {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 100;
-          padding: 20px 60px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          background: rgba(8, 11, 18, 0.7);
-          backdrop-filter: blur(20px);
-          border-bottom: 1px solid var(--border);
-        }
+      .features-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+      .feature-block {
+        position: relative;
+        padding: 36px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: border-color 0.3s;
+      }
+      .feature-block:hover {
+        border-color: rgba(108, 99, 255, 0.25);
+      }
+      .feature-block.featured {
+        grid-column: 1/-1;
+        background: linear-gradient(
+          135deg,
+          rgba(108, 99, 255, 0.08) 0%,
+          rgba(56, 189, 248, 0.04) 100%
+        );
+        border-color: rgba(108, 99, 255, 0.2);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: center;
+      }
+      .feature-num {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 3rem;
+        color: rgba(108, 99, 255, 0.15);
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+      .feature-title {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: #fff;
+        margin-bottom: 10px;
+      }
+      .feature-desc {
+        font-size: 0.875rem;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+      .feature-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 16px;
+      }
+      .ftag {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-family: "JetBrains Mono", monospace;
+        letter-spacing: 0.05em;
+      }
+      .ftag.blue {
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--accent2);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+      }
+      .ftag.green {
+        background: rgba(52, 211, 153, 0.1);
+        color: var(--accent3);
+        border: 1px solid rgba(52, 211, 153, 0.2);
+      }
+      .ftag.purple {
+        background: rgba(108, 99, 255, 0.1);
+        color: var(--accent);
+        border: 1px solid rgba(108, 99, 255, 0.2);
+      }
+      .ftag.yellow {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warn);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
 
-        .nav-logo {
-          font-family: "Syne", sans-serif;
-          font-weight: 800;
-          font-size: 1.3rem;
-          letter-spacing: -0.02em;
-          color: #fff;
-        }
-        .nav-logo span {
-          color: var(--accent);
-        }
+      /* ── SCREEN PLANNING ── */
+      .screens-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 48px;
+      }
+      .screen-nav-btn {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.65rem;
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        cursor: pointer;
+        background: transparent;
+        transition: all 0.2s;
+        text-decoration: none;
+      }
+      .screen-nav-btn:hover,
+      .screen-nav-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(108, 99, 255, 0.08);
+      }
 
-        .nav-links {
-          display: flex;
-          gap: 32px;
-          list-style: none;
-        }
-        .nav-links a {
-          font-size: 0.8rem;
-          font-weight: 500;
-          color: var(--muted);
-          text-decoration: none;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          transition: color 0.2s;
-        }
-        .nav-links a:hover {
-          color: var(--text);
-        }
+      .screen-group {
+        margin-bottom: 72px;
+      }
+      .screen-group-title {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 1.4rem;
+        color: #fff;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .screen-group-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+      .screen-group-sub {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 32px;
+      }
 
-        .nav-badge {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.7rem;
-          color: var(--accent3);
-          border: 1px solid var(--accent3);
-          padding: 4px 12px;
-          border-radius: 20px;
-        }
+      .screen-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 24px;
+      }
+      .screen-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition:
+          border-color 0.3s,
+          transform 0.3s;
+      }
+      .screen-card:hover {
+        border-color: rgba(108, 99, 255, 0.3);
+        transform: translateY(-4px);
+      }
 
-        /* ── SECTIONS ── */
-        section {
-          position: relative;
-          z-index: 1;
-          padding: 100px 60px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
+      .screen-preview {
+        position: relative;
+        background: #0a0f1e;
+        border-bottom: 1px solid var(--border);
+        overflow: hidden;
+      }
+      .screen-preview.tall {
+        height: 280px;
+      }
+      .screen-preview.medium {
+        height: 220px;
+      }
 
-        /* ── HERO ── */
-        .hero {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding-top: 120px;
-          max-width: 100%;
-          padding-left: 60px;
-          padding-right: 60px;
-        }
+      /* 미니 UI 프리뷰 */
+      .mini-ui {
+        padding: 12px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0;
+      }
+      .mini-sidebar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 70px;
+        background: #0d1120;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 8px 0;
+      }
+      .mini-logo {
+        height: 20px;
+        margin: 4px 8px 8px;
+        background: rgba(108, 99, 255, 0.4);
+        border-radius: 4px;
+      }
+      .mini-nav-item {
+        height: 8px;
+        margin: 4px 8px;
+        border-radius: 3px;
+      }
+      .mini-nav-item.active {
+        background: rgba(108, 99, 255, 0.6);
+      }
+      .mini-nav-item.inactive {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .mini-content {
+        margin-left: 70px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        height: 100%;
+      }
+      .mini-topbar {
+        height: 28px;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        margin: -10px -10px 8px;
+      }
+      .mini-title {
+        width: 80px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 3px;
+      }
+      .mini-btn {
+        width: 50px;
+        height: 14px;
+        background: rgba(108, 99, 255, 0.6);
+        border-radius: 4px;
+      }
+      .mini-metric-row {
+        display: flex;
+        gap: 5px;
+      }
+      .mini-metric {
+        flex: 1;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 5px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .mini-card-row {
+        display: flex;
+        gap: 5px;
+        flex: 1;
+      }
+      .mini-card {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        flex-direction: column;
+        padding: 7px;
+        gap: 4px;
+      }
+      .mini-card-logo {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        background: rgba(108, 99, 255, 0.4);
+      }
+      .mini-card-line {
+        height: 5px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .mini-card-line.short {
+        width: 60%;
+      }
+      .mini-card-amount {
+        height: 7px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.25);
+        margin-top: 3px;
+      }
+      .mini-chart-bar {
+        display: flex;
+        align-items: flex-end;
+        gap: 3px;
+        height: 60px;
+        padding-top: 8px;
+      }
+      .bar {
+        flex: 1;
+        background: rgba(108, 99, 255, 0.4);
+        border-radius: 2px 2px 0 0;
+      }
+      .bar.hi {
+        background: rgba(108, 99, 255, 0.8);
+      }
+      .mini-table-row {
+        height: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        padding: 0 6px;
+        gap: 6px;
+      }
+      .mini-table-row:nth-child(even) {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .mini-col {
+        height: 5px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.15);
+      }
+      .mini-col.w1 {
+        width: 20px;
+      }
+      .mini-col.w2 {
+        width: 40px;
+      }
+      .mini-col.w3 {
+        flex: 1;
+      }
+      .mini-col.w4 {
+        width: 30px;
+      }
+      .mini-logo-circle {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(108, 99, 255, 0.5);
+        flex-shrink: 0;
+      }
 
-        .hero-eyebrow {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.75rem;
-          color: var(--accent);
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          margin-bottom: 24px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .hero-eyebrow::before {
-          content: "";
-          display: block;
-          width: 40px;
-          height: 1px;
-          background: var(--accent);
-        }
+      /* 로그인 프리뷰 */
+      .mini-auth {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+      .mini-auth-box {
+        width: 160px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .mini-auth-logo {
+        height: 12px;
+        background: rgba(108, 99, 255, 0.6);
+        border-radius: 3px;
+        margin-bottom: 4px;
+      }
+      .mini-input {
+        height: 16px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+      .mini-submit {
+        height: 18px;
+        background: rgba(108, 99, 255, 0.7);
+        border-radius: 4px;
+      }
+      .mini-link {
+        height: 6px;
+        width: 80px;
+        background: rgba(108, 99, 255, 0.3);
+        border-radius: 2px;
+        margin: 0 auto;
+      }
 
-        .hero h1 {
-          font-family: "Syne", sans-serif;
-          font-weight: 800;
-          font-size: clamp(3.5rem, 8vw, 7rem);
-          line-height: 0.95;
-          letter-spacing: -0.03em;
-          color: #fff;
-          margin-bottom: 32px;
-        }
+      /* 모달 프리뷰 */
+      .mini-modal-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mini-modal {
+        width: 170px;
+        background: #0d1120;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .mini-modal-title {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+        width: 80px;
+        margin-bottom: 4px;
+      }
+      .mini-modal-label {
+        height: 5px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        width: 50px;
+      }
+      .mini-modal-select {
+        height: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+      .mini-modal-btns {
+        display: flex;
+        gap: 4px;
+        margin-top: 4px;
+      }
+      .mini-modal-btn {
+        flex: 1;
+        height: 16px;
+        border-radius: 3px;
+      }
+      .mini-modal-btn.cancel {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .mini-modal-btn.confirm {
+        background: rgba(108, 99, 255, 0.7);
+      }
 
-        .hero h1 .outline {
-          -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
-          color: transparent;
-        }
+      /* 화면 카드 정보 */
+      .screen-info {
+        padding: 20px 24px;
+      }
+      .screen-badge-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      .screen-badge {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.6rem;
+        padding: 3px 8px;
+        border-radius: 20px;
+      }
+      .sb-done {
+        background: rgba(52, 211, 153, 0.1);
+        color: var(--accent3);
+        border: 1px solid rgba(52, 211, 153, 0.2);
+      }
+      .sb-inprogress {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warn);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
+      .sb-planned {
+        background: rgba(107, 114, 128, 0.1);
+        color: var(--muted);
+        border: 1px solid rgba(107, 114, 128, 0.2);
+      }
+      .sb-admin {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+      .sb-free {
+        background: rgba(52, 211, 153, 0.1);
+        color: var(--accent3);
+        border: 1px solid rgba(52, 211, 153, 0.2);
+      }
+      .sb-pro {
+        background: rgba(108, 99, 255, 0.1);
+        color: var(--accent);
+        border: 1px solid rgba(108, 99, 255, 0.2);
+      }
+      .screen-name {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        color: #fff;
+        margin-bottom: 6px;
+      }
+      .screen-path {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        margin-bottom: 10px;
+      }
+      .screen-desc {
+        font-size: 0.8rem;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 12px;
+      }
+      .screen-features {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .sf {
+        font-size: 0.75rem;
+        color: var(--text);
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .sf::before {
+        content: "·";
+        color: var(--accent);
+        flex-shrink: 0;
+      }
 
-        .hero h1 .accent-word {
-          background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
+      /* 번들 섹션 */
+      .bundle-section {
+        background: linear-gradient(135deg, rgba(108, 99, 255, 0.06) 0%, rgba(8, 11, 18, 0) 60%);
+        border: 1px solid rgba(108, 99, 255, 0.15);
+        border-radius: 20px;
+        padding: 60px;
+      }
+      .provider-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 48px;
+      }
+      .provider-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        transition: all 0.25s;
+      }
+      .provider-card:hover {
+        background: rgba(108, 99, 255, 0.06);
+        border-color: rgba(108, 99, 255, 0.25);
+        transform: translateY(-4px);
+      }
+      .provider-emoji {
+        font-size: 2rem;
+        margin-bottom: 12px;
+        display: block;
+      }
+      .provider-name {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #fff;
+        margin-bottom: 8px;
+      }
+      .provider-detail {
+        font-size: 0.75rem;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .flow-diagram {
+        margin-top: 48px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0;
+      }
+      .flow-step {
+        flex: 1;
+        min-width: 140px;
+        padding: 20px 16px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-align: center;
+        position: relative;
+      }
+      .flow-step::after {
+        content: "→";
+        position: absolute;
+        right: -18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-size: 1rem;
+        z-index: 2;
+      }
+      .flow-step:last-child::after {
+        display: none;
+      }
+      .flow-step-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--accent);
+        margin-bottom: 6px;
+      }
+      .flow-step-title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .flow-step-sub {
+        font-size: 0.7rem;
+        color: var(--muted);
+      }
 
-        .hero-desc {
-          font-size: 1.1rem;
-          color: var(--muted);
-          max-width: 560px;
-          margin-bottom: 48px;
-          line-height: 1.8;
-        }
+      /* 로드맵 */
+      .roadmap {
+        position: relative;
+        padding-left: 40px;
+      }
+      .roadmap::before {
+        content: "";
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: linear-gradient(to bottom, var(--accent), rgba(108, 99, 255, 0));
+      }
+      .roadmap-item {
+        position: relative;
+        margin-bottom: 48px;
+      }
+      .roadmap-item::before {
+        content: "";
+        position: absolute;
+        left: -36px;
+        top: 6px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 12px var(--accent);
+      }
+      .roadmap-item.done::before {
+        background: var(--accent3);
+        box-shadow: 0 0 12px var(--accent3);
+      }
+      .roadmap-item.future::before {
+        background: var(--muted);
+        box-shadow: none;
+      }
+      .roadmap-phase {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.65rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .roadmap-item.done .roadmap-phase {
+        color: var(--accent3);
+      }
+      .roadmap-item.future .roadmap-phase {
+        color: var(--muted);
+      }
+      .roadmap-title {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #fff;
+        margin-bottom: 8px;
+      }
+      .roadmap-desc {
+        font-size: 0.875rem;
+        color: var(--muted);
+        line-height: 1.6;
+        max-width: 600px;
+      }
+      .roadmap-tasks {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .rtask {
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+      }
 
-        .hero-stats {
-          display: flex;
-          gap: 48px;
-          border-top: 1px solid var(--border);
-          padding-top: 40px;
-          margin-top: 40px;
-        }
+      /* 데이터 아키텍처 */
+      .entity-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .entity-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .entity-header {
+        padding: 16px 20px;
+        background: rgba(108, 99, 255, 0.08);
+        border-bottom: 1px solid var(--border);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.8rem;
+        color: var(--accent);
+        font-weight: 500;
+      }
+      .entity-header.updated {
+        border-left: 3px solid var(--accent3);
+      }
+      .entity-header.new {
+        border-left: 3px solid var(--warn);
+      }
+      .entity-fields {
+        padding: 16px 20px;
+      }
+      .entity-field {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 0.75rem;
+      }
+      .entity-field:last-child {
+        border-bottom: none;
+      }
+      .ef-name {
+        color: var(--text);
+        font-family: "JetBrains Mono", monospace;
+      }
+      .ef-name.ef-pk {
+        color: var(--warn);
+      }
+      .ef-name.ef-fk {
+        color: var(--accent2);
+      }
+      .ef-name.ef-new {
+        color: var(--accent3);
+      }
+      .ef-type {
+        color: var(--muted);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+      }
 
-        .stat-item {
-        }
-        .stat-num {
-          font-family: "Syne", sans-serif;
-          font-weight: 700;
-          font-size: 2rem;
-          color: #fff;
-          line-height: 1;
-          margin-bottom: 4px;
-        }
-        .stat-num span {
-          color: var(--accent);
-        }
-        .stat-label {
-          font-size: 0.75rem;
-          color: var(--muted);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
+      /* 수익화 */
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      .price-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 40px;
+        position: relative;
+        overflow: hidden;
+      }
+      .price-card.pro {
+        border-color: rgba(108, 99, 255, 0.3);
+        background: linear-gradient(135deg, rgba(108, 99, 255, 0.06) 0%, transparent 100%);
+      }
+      .price-card.pro::before {
+        content: "RECOMMENDED";
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.6rem;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 3px 8px;
+        border-radius: 20px;
+        letter-spacing: 0.1em;
+      }
+      .price-tier {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: 12px;
+      }
+      .price-amount {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 2.8rem;
+        color: #fff;
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+      .price-amount sup {
+        font-size: 1.2rem;
+        font-weight: 400;
+        color: var(--muted);
+        vertical-align: top;
+        margin-top: 8px;
+      }
+      .price-amount sub {
+        font-size: 1rem;
+        font-weight: 400;
+        color: var(--muted);
+      }
+      .price-desc {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 28px;
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--border);
+      }
+      .price-feature {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 12px;
+        font-size: 0.85rem;
+        color: var(--text);
+      }
+      .price-feature::before {
+        content: "✓";
+        color: var(--accent3);
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .price-feature.muted {
+        color: var(--muted);
+      }
+      .price-feature.muted::before {
+        content: "—";
+        color: var(--muted);
+      }
 
-        /* ── SECTION HEADER ── */
-        .section-num {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.7rem;
-          color: var(--accent);
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          margin-bottom: 12px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .section-num::after {
-          content: "";
-          flex: 1;
-          max-width: 40px;
-          height: 1px;
-          background: var(--accent);
-        }
+      hr.divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 0;
+        position: relative;
+        z-index: 1;
+      }
+      footer {
+        position: relative;
+        z-index: 1;
+        padding: 48px 60px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-top: 1px solid var(--border);
+      }
+      .footer-left {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 2rem;
+        color: #fff;
+      }
+      .footer-left span {
+        color: var(--accent);
+      }
+      .footer-meta {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--muted);
+        text-align: right;
+        line-height: 1.8;
+      }
 
-        .section-title {
-          font-family: "Syne", sans-serif;
-          font-weight: 800;
-          font-size: clamp(2rem, 4vw, 3.2rem);
-          line-height: 1.05;
-          letter-spacing: -0.02em;
-          color: #fff;
-          margin-bottom: 16px;
+      .live-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: var(--accent3);
+        border-radius: 50%;
+        animation: pulse 2s ease infinite;
+        margin-right: 6px;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
         }
-
-        .section-sub {
-          color: var(--muted);
-          font-size: 1rem;
-          max-width: 560px;
-          margin-bottom: 64px;
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
         }
-
-        /* ── OVERVIEW GRID ── */
-        .overview-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 2px;
-          background: var(--border);
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          overflow: hidden;
-          margin-bottom: 40px;
-        }
-
-        .overview-cell {
-          background: var(--bg2);
-          padding: 40px;
-        }
-        .overview-cell:first-child {
-          grid-column: 1 / -1;
-          background: linear-gradient(
-            135deg,
-            rgba(108, 99, 255, 0.1) 0%,
-            rgba(56, 189, 248, 0.05) 100%
-          );
-          border-bottom: 1px solid var(--border);
-        }
-
-        .oc-label {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.65rem;
-          color: var(--muted);
-          text-transform: uppercase;
-          letter-spacing: 0.15em;
-          margin-bottom: 10px;
-        }
-        .oc-value {
-          font-size: 1rem;
-          color: var(--text);
-          font-weight: 400;
-          line-height: 1.6;
-        }
-        .oc-value.large {
-          font-family: "Syne", sans-serif;
-          font-size: 1.3rem;
-          font-weight: 700;
-          color: #fff;
-        }
-
-        /* ── TECH STACK ── */
-        .stack-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-        }
-
-        .stack-card {
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 28px;
-          transition:
-            border-color 0.2s,
-            transform 0.2s;
-          animation: fadeUp 0.5s ease both;
-        }
-        .stack-card:hover {
-          border-color: rgba(108, 99, 255, 0.3);
-          transform: translateY(-4px);
-        }
-
-        .stack-icon {
-          font-size: 1.5rem;
-          margin-bottom: 12px;
-        }
-        .stack-name {
-          font-family: "Syne", sans-serif;
-          font-weight: 700;
-          font-size: 1rem;
-          color: #fff;
-          margin-bottom: 8px;
-        }
-        .stack-detail {
-          font-size: 0.8rem;
-          color: var(--muted);
-          line-height: 1.6;
-        }
-        .stack-tag {
-          display: inline-block;
-          margin-top: 12px;
-          padding: 3px 10px;
-          background: rgba(108, 99, 255, 0.1);
-          border: 1px solid rgba(108, 99, 255, 0.2);
-          border-radius: 20px;
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.65rem;
-          color: var(--accent);
-        }
-
-        /* ── FEATURES ── */
-        .features-layout {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 40px;
-        }
-
-        .feature-block {
-          position: relative;
-          padding: 36px;
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          overflow: hidden;
-          transition: border-color 0.3s;
-        }
-        .feature-block:hover {
-          border-color: rgba(108, 99, 255, 0.25);
-        }
-
-        .feature-block.featured {
-          grid-column: 1 / -1;
-          background: linear-gradient(
-            135deg,
-            rgba(108, 99, 255, 0.08) 0%,
-            rgba(56, 189, 248, 0.04) 100%
-          );
-          border-color: rgba(108, 99, 255, 0.2);
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 40px;
-          align-items: center;
-        }
-
-        .feature-num {
-          font-family: "Syne", sans-serif;
-          font-weight: 800;
-          font-size: 3rem;
-          color: rgba(108, 99, 255, 0.15);
-          line-height: 1;
-          margin-bottom: 8px;
-        }
-
-        .feature-title {
-          font-family: "Syne", sans-serif;
-          font-weight: 700;
-          font-size: 1.15rem;
-          color: #fff;
-          margin-bottom: 10px;
-        }
-
-        .feature-desc {
-          font-size: 0.875rem;
-          color: var(--muted);
-          line-height: 1.7;
-        }
-
-        .feature-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          margin-top: 16px;
-        }
-
-        .ftag {
-          padding: 3px 10px;
-          border-radius: 20px;
-          font-size: 0.65rem;
-          font-family: "JetBrains Mono", monospace;
-          letter-spacing: 0.05em;
-        }
-        .ftag.blue {
-          background: rgba(56, 189, 248, 0.1);
-          color: var(--accent2);
-          border: 1px solid rgba(56, 189, 248, 0.2);
-        }
-        .ftag.green {
-          background: rgba(52, 211, 153, 0.1);
-          color: var(--accent3);
-          border: 1px solid rgba(52, 211, 153, 0.2);
-        }
-        .ftag.purple {
-          background: rgba(108, 99, 255, 0.1);
-          color: var(--accent);
-          border: 1px solid rgba(108, 99, 255, 0.2);
-        }
-        .ftag.yellow {
-          background: rgba(245, 158, 11, 0.1);
-          color: var(--warn);
-          border: 1px solid rgba(245, 158, 11, 0.2);
-        }
-
-        /* ── BUNDLE HIGHLIGHT ── */
-        .bundle-section {
-          background: linear-gradient(135deg, rgba(108, 99, 255, 0.06) 0%, rgba(8, 11, 18, 0) 60%);
-          border: 1px solid rgba(108, 99, 255, 0.15);
-          border-radius: 20px;
-          padding: 60px;
-          margin: 0;
-        }
-
-        .provider-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-          margin-top: 48px;
-        }
-
-        .provider-card {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 24px;
-          text-align: center;
-          transition: all 0.25s;
-        }
-        .provider-card:hover {
-          background: rgba(108, 99, 255, 0.06);
-          border-color: rgba(108, 99, 255, 0.25);
-          transform: translateY(-4px);
-        }
-
-        .provider-emoji {
-          font-size: 2rem;
-          margin-bottom: 12px;
-          display: block;
-        }
-        .provider-name {
-          font-family: "Syne", sans-serif;
-          font-weight: 700;
-          font-size: 0.95rem;
-          color: #fff;
-          margin-bottom: 8px;
-        }
-        .provider-detail {
-          font-size: 0.75rem;
-          color: var(--muted);
-          line-height: 1.5;
-        }
-
-        .flow-diagram {
-          margin-top: 48px;
-          display: flex;
-          align-items: center;
-          gap: 0;
-          flex-wrap: wrap;
-          gap: 0;
-        }
-
-        .flow-step {
-          flex: 1;
-          min-width: 140px;
-          padding: 20px 16px;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--border);
-          border-radius: 10px;
-          text-align: center;
-          position: relative;
-        }
-
-        .flow-step::after {
-          content: "→";
-          position: absolute;
-          right: -18px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--muted);
-          font-size: 1rem;
-          z-index: 2;
-        }
-        .flow-step:last-child::after {
-          display: none;
-        }
-
-        .flow-step-num {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.6rem;
-          color: var(--accent);
-          margin-bottom: 6px;
-        }
-        .flow-step-title {
-          font-size: 0.8rem;
-          font-weight: 500;
-          color: var(--text);
-          margin-bottom: 4px;
-        }
-        .flow-step-sub {
-          font-size: 0.7rem;
-          color: var(--muted);
-        }
-
-        /* ── ROADMAP ── */
-        .roadmap {
-          position: relative;
-          padding-left: 40px;
-        }
-
-        .roadmap::before {
-          content: "";
-          position: absolute;
-          left: 8px;
-          top: 0;
-          bottom: 0;
-          width: 1px;
-          background: linear-gradient(to bottom, var(--accent), rgba(108, 99, 255, 0));
-        }
-
-        .roadmap-item {
-          position: relative;
-          margin-bottom: 48px;
+      }
+      @keyframes fadeUp {
+        from {
           opacity: 0;
-          animation: fadeLeft 0.5s ease both;
+          transform: translateY(24px);
         }
-        .roadmap-item:nth-child(1) {
-          animation-delay: 0.1s;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .roadmap-item:nth-child(2) {
-          animation-delay: 0.2s;
-        }
-        .roadmap-item:nth-child(3) {
-          animation-delay: 0.3s;
-        }
-        .roadmap-item:nth-child(4) {
-          animation-delay: 0.4s;
-        }
-        .roadmap-item:nth-child(5) {
-          animation-delay: 0.5s;
-        }
-        .roadmap-item:nth-child(6) {
-          animation-delay: 0.6s;
-        }
-        .roadmap-item:nth-child(7) {
-          animation-delay: 0.7s;
-        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
 
-        .roadmap-item::before {
-          content: "";
-          position: absolute;
-          left: -36px;
-          top: 6px;
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: var(--accent);
-          box-shadow: 0 0 12px var(--accent);
-        }
+    <nav>
+      <div class="nav-logo">Sub<span>Lens</span></div>
+      <ul class="nav-links">
+        <li><a href="#overview">개요</a></li>
+        <li><a href="#features">기능</a></li>
+        <li><a href="#screens">화면기획</a></li>
+        <li><a href="#bundle">번들최적화</a></li>
+        <li><a href="#roadmap">로드맵</a></li>
+        <li><a href="#data">데이터설계</a></li>
+        <li><a href="#pricing">수익화</a></li>
+      </ul>
+      <div class="nav-badge"><span class="live-dot"></span>v2.0 기획서</div>
+    </nav>
 
-        .roadmap-item.done::before {
-          background: var(--accent3);
-          box-shadow: 0 0 12px var(--accent3);
-        }
-        .roadmap-item.future::before {
-          background: var(--muted);
-          box-shadow: none;
-        }
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-eyebrow">Project Proposal · 2026</div>
+      <h1>
+        당신의 구독을<br /><span class="outline">낭비 없이</span><br /><span class="accent-word"
+          >최적화하다</span
+        >
+      </h1>
+      <p class="hero-desc">
+        SubLens는 흩어진 구독 서비스를 한곳에 모아 지출을 분석하고, 통신사 결합 및 네이버플러스
+        멤버십을 통한 최적 번들 조합을 AI가 자동으로 추천하는 구독 관리 SaaS입니다.
+      </p>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-num">₩<span>47</span>만</div>
+          <div class="stat-label">한국인 평균 월 구독 지출</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num"><span>3.2</span>개</div>
+          <div class="stat-label">인지 못한 중복 구독 평균</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num"><span>4</span>개</div>
+          <div class="stat-label">지원 번들 플랫폼</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">Free<span>+</span>Pro</div>
+          <div class="stat-label">수익화 모델</div>
+        </div>
+      </div>
+    </div>
 
-        .roadmap-phase {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.65rem;
-          color: var(--accent);
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-          margin-bottom: 6px;
-        }
-        .roadmap-item.done .roadmap-phase {
-          color: var(--accent3);
-        }
-        .roadmap-item.future .roadmap-phase {
-          color: var(--muted);
-        }
+    <hr class="divider" />
 
-        .roadmap-title {
-          font-family: "Syne", sans-serif;
-          font-weight: 700;
-          font-size: 1.1rem;
-          color: #fff;
-          margin-bottom: 8px;
-        }
-
-        .roadmap-desc {
-          font-size: 0.875rem;
-          color: var(--muted);
-          line-height: 1.6;
-          max-width: 600px;
-        }
-
-        .roadmap-tasks {
-          margin-top: 12px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-
-        .rtask {
-          font-size: 0.7rem;
-          padding: 3px 10px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid var(--border);
-          border-radius: 20px;
-          color: var(--muted);
-          font-family: "JetBrains Mono", monospace;
-        }
-
-        /* ── MONETIZATION ── */
-        .pricing-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-        }
-
-        .price-card {
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          padding: 40px;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .price-card.pro {
-          border-color: rgba(108, 99, 255, 0.3);
-          background: linear-gradient(135deg, rgba(108, 99, 255, 0.06) 0%, transparent 100%);
-        }
-
-        .price-card.pro::before {
-          content: "RECOMMENDED";
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.6rem;
-          color: var(--accent);
-          border: 1px solid var(--accent);
-          padding: 3px 8px;
-          border-radius: 20px;
-          letter-spacing: 0.1em;
-        }
-
-        .price-tier {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.7rem;
-          color: var(--muted);
-          text-transform: uppercase;
-          letter-spacing: 0.15em;
-          margin-bottom: 12px;
-        }
-
-        .price-amount {
-          font-family: "Syne", sans-serif;
-          font-weight: 800;
-          font-size: 2.8rem;
-          color: #fff;
-          line-height: 1;
-          margin-bottom: 6px;
-        }
-        .price-amount sup {
-          font-size: 1.2rem;
-          font-weight: 400;
-          color: var(--muted);
-          vertical-align: top;
-          margin-top: 8px;
-        }
-        .price-amount sub {
-          font-size: 1rem;
-          font-weight: 400;
-          color: var(--muted);
-        }
-
-        .price-desc {
-          font-size: 0.8rem;
-          color: var(--muted);
-          margin-bottom: 28px;
-          padding-bottom: 28px;
-          border-bottom: 1px solid var(--border);
-        }
-
-        .price-feature {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          margin-bottom: 12px;
-          font-size: 0.85rem;
-          color: var(--text);
-        }
-        .price-feature::before {
-          content: "✓";
-          color: var(--accent3);
-          font-weight: 700;
-          flex-shrink: 0;
-          margin-top: 1px;
-        }
-        .price-feature.muted {
-          color: var(--muted);
-        }
-        .price-feature.muted::before {
-          content: "—";
-          color: var(--muted);
-        }
-
-        /* ── DATA ARCH ── */
-        .entity-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-        }
-
-        .entity-card {
-          background: var(--bg2);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .entity-header {
-          padding: 16px 20px;
-          background: rgba(108, 99, 255, 0.08);
-          border-bottom: 1px solid var(--border);
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.8rem;
-          color: var(--accent);
-          font-weight: 500;
-        }
-
-        .entity-fields {
-          padding: 16px 20px;
-        }
-
-        .entity-field {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 5px 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-          font-size: 0.75rem;
-        }
-        .entity-field:last-child {
-          border-bottom: none;
-        }
-
-        .ef-name {
-          color: var(--text);
-          font-family: "JetBrains Mono", monospace;
-        }
-        .ef-type {
-          color: var(--muted);
-          font-size: 0.65rem;
-        }
-        .ef-pk {
-          color: var(--warn);
-        }
-        .ef-fk {
-          color: var(--accent2);
-        }
-
-        /* ── FOOTER ── */
-        footer {
-          position: relative;
-          z-index: 1;
-          border-top: 1px solid var(--border);
-          padding: 40px 60px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .footer-left {
-          font-family: "Syne", sans-serif;
-          font-weight: 800;
-          font-size: 1.1rem;
-          color: #fff;
-        }
-        .footer-left span {
-          color: var(--accent);
-        }
-
-        .footer-meta {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.7rem;
-          color: var(--muted);
-          text-align: right;
-          line-height: 1.8;
-        }
-
-        /* ── DIVIDER ── */
-        .divider {
-          border: none;
-          border-top: 1px solid var(--border);
-          margin: 0;
-        }
-
-        /* ── INLINE CODE ── */
-        code {
-          font-family: "JetBrains Mono", monospace;
-          font-size: 0.8em;
-          color: var(--accent2);
-          background: rgba(56, 189, 248, 0.08);
-          padding: 2px 6px;
-          border-radius: 4px;
-        }
-
-        /* ── ANIMATIONS ── */
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(24px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes fadeLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-16px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        @keyframes pulse {
-          0%,
-          100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.4;
-          }
-        }
-
-        .animate {
-          animation: fadeUp 0.6s ease both;
-        }
-        .delay-1 {
-          animation-delay: 0.1s;
-        }
-        .delay-2 {
-          animation-delay: 0.2s;
-        }
-        .delay-3 {
-          animation-delay: 0.3s;
-        }
-
-        .live-dot {
-          display: inline-block;
-          width: 6px;
-          height: 6px;
-          background: var(--accent3);
-          border-radius: 50%;
-          animation: pulse 2s ease infinite;
-          margin-right: 6px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="orb orb1"></div>
-      <div class="orb orb2"></div>
-
-      <!-- NAV -->
-      <nav>
-        <div class="nav-logo">Sub<span>Lens</span></div>
-        <ul class="nav-links">
-          <li><a href="#overview">개요</a></li>
-          <li><a href="#features">기능</a></li>
-          <li><a href="#bundle">번들최적화</a></li>
-          <li><a href="#roadmap">로드맵</a></li>
-          <li><a href="#data">데이터설계</a></li>
-          <li><a href="#pricing">수익화</a></li>
-        </ul>
-        <div class="nav-badge"><span class="live-dot"></span>v1.0 기획서</div>
-      </nav>
-
-      <!-- HERO -->
-      <div class="hero">
-        <div class="hero-eyebrow">Project Proposal · 2026</div>
-        <h1>
-          당신의 구독을<br />
-          <span class="outline">낭비 없이</span><br />
-          <span class="accent-word">최적화하다</span>
-        </h1>
-        <p class="hero-desc">
-          SubLens는 흩어진 구독 서비스를 한곳에 모아 지출을 분석하고, 통신사 결합 및 네이버플러스
-          멤버십을 통한 최적 번들 조합을 AI가 자동으로 추천하는 구독 관리 SaaS입니다.
-        </p>
-        <div class="hero-stats">
-          <div class="stat-item">
-            <div class="stat-num">₩<span>47</span>만</div>
-            <div class="stat-label">한국인 평균 월 구독 지출</div>
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <div class="section-num">01 &mdash; Overview</div>
+      <h2 class="section-title">프로젝트 개요</h2>
+      <p class="section-sub">SubLens의 핵심 목표와 기술 스택을 한눈에 정리합니다.</p>
+      <div class="overview-grid">
+        <div class="overview-cell">
+          <div class="oc-label">Product Vision</div>
+          <div class="oc-value large">
+            구독 서비스를 수동 등록하고, 갱신 알림 · 지출 분석 · AI 기반 대체재 추천 · 통신사/네이버
+            번들 최적화를 제공하는 개인 구독 관리 SaaS. 실제 런칭 및 수익화 목표.
           </div>
-          <div class="stat-item">
-            <div class="stat-num"><span>3.2</span>개</div>
-            <div class="stat-label">인지 못한 중복 구독 평균</div>
+        </div>
+        <div class="overview-cell">
+          <div class="oc-label">Target User</div>
+          <div class="oc-value">
+            월 3개 이상 구독 서비스를 이용하며 지출을 최적화하고 싶은 한국 사용자. 특히 통신사
+            요금제와 OTT를 결합해 절약하고 싶은 20~40대.
           </div>
-          <div class="stat-item">
-            <div class="stat-num"><span>4</span>개</div>
-            <div class="stat-label">지원 번들 플랫폼</div>
+        </div>
+        <div class="overview-cell">
+          <div class="oc-label">Architecture</div>
+          <div class="oc-value">
+            Monorepo · Spring Boot + Next.js (App Router) · PostgreSQL + pgvector · Redis · Docker
+            Compose
           </div>
-          <div class="stat-item">
-            <div class="stat-num">Free<span>+</span>Pro</div>
-            <div class="stat-label">수익화 모델</div>
+        </div>
+        <div class="overview-cell">
+          <div class="oc-label">Core Differentiator</div>
+          <div class="oc-value">
+            단순 구독 트래커를 넘어, 통신사 결합/네이버플러스 번들 최적화를 AI가 분석해 실질적인
+            절약 금액을 제시하는 추천 엔진
+          </div>
+        </div>
+        <div class="overview-cell">
+          <div class="oc-label">Revenue Model</div>
+          <div class="oc-value">
+            Freemium — Free (5개 제한) / Pro $5~9/월 (무제한 + AI 추천 + 번들 최적화)
           </div>
         </div>
       </div>
-
-      <hr class="divider" />
-
-      <!-- OVERVIEW -->
-      <section id="overview">
-        <div class="section-num">01 &mdash; Overview</div>
-        <h2 class="section-title">프로젝트 개요</h2>
-        <p class="section-sub">SubLens의 핵심 목표와 기술 스택을 한눈에 정리합니다.</p>
-
-        <div class="overview-grid animate">
-          <div class="overview-cell">
-            <div class="oc-label">Product Vision</div>
-            <div class="oc-value large">
-              구독 서비스를 수동 등록하고, 갱신 알림 · 지출 분석 · AI 기반 대체재 추천 ·
-              통신사/네이버 번들 최적화를 제공하는 개인 구독 관리 SaaS. 실제 런칭 및 수익화 목표.
-            </div>
+      <div class="stack-grid">
+        <div class="stack-card">
+          <div class="stack-icon">⚙️</div>
+          <div class="stack-name">Backend</div>
+          <div class="stack-detail">
+            Spring Boot 3.5 · JWT (HttpOnly Cookie) · Redis (Token + Refresh Rotation) · Resend API
           </div>
-          <div class="overview-cell">
-            <div class="oc-label">Target User</div>
-            <div class="oc-value">
-              월 3개 이상 구독 서비스를 이용하며 지출을 최적화하고 싶은 한국 사용자. 특히 통신사
-              요금제와 OTT를 결합해 절약하고 싶은 20~40대.
-            </div>
-          </div>
-          <div class="overview-cell">
-            <div class="oc-label">Architecture</div>
-            <div class="oc-value">
-              Monorepo · Spring Boot + Next.js (App Router) · PostgreSQL + pgvector · Redis · Docker
-              Compose
-            </div>
-          </div>
-          <div class="overview-cell">
-            <div class="oc-label">Core Differentiator</div>
-            <div class="oc-value">
-              단순 구독 트래커를 넘어, 통신사 결합/네이버플러스 번들 최적화를 AI가 분석해 실질적인
-              절약 금액을 제시하는 추천 엔진
-            </div>
-          </div>
-          <div class="overview-cell">
-            <div class="oc-label">Revenue Model</div>
-            <div class="oc-value">
-              Freemium — Free (5개 제한) / Pro $5~9/월 (무제한 + AI 추천 + 번들 최적화)
-            </div>
-          </div>
+          <span class="stack-tag">Java 21 · Spring Security 6.5</span>
         </div>
-
-        <!-- TECH STACK -->
-        <div class="stack-grid">
-          <div class="stack-card animate delay-1">
-            <div class="stack-icon">⚙️</div>
-            <div class="stack-name">Backend</div>
-            <div class="stack-detail">
-              Spring Boot · JWT (HttpOnly Cookie) · Redis (Token Cache) · Resend API (Email)
-            </div>
-            <span class="stack-tag">com.sublens.backend</span>
+        <div class="stack-card">
+          <div class="stack-icon">🖥️</div>
+          <div class="stack-name">Frontend</div>
+          <div class="stack-detail">
+            Next.js 16 · React 19 · TanStack Query v5 · Axios · Zustand · shadcn/ui · Tailwind CSS
           </div>
-          <div class="stack-card animate delay-2">
-            <div class="stack-icon">🖥️</div>
-            <div class="stack-name">Frontend</div>
-            <div class="stack-detail">
-              Next.js 14 (App Router) · TanStack Query · Axios Interceptor · Tailwind CSS
-            </div>
-            <span class="stack-tag">features/ + views/</span>
-          </div>
-          <div class="stack-card animate delay-3">
-            <div class="stack-icon">🗄️</div>
-            <div class="stack-name">Database</div>
-            <div class="stack-detail">
-              PostgreSQL 16 · pgvector (임베딩 저장) · Redis 7 (세션/캐시) · JSONB (번들 혜택 구조)
-            </div>
-            <span class="stack-tag">postgres:16</span>
-          </div>
-          <div class="stack-card animate delay-1">
-            <div class="stack-icon">🤖</div>
-            <div class="stack-name">AI / ML</div>
-            <div class="stack-detail">
-              Claude API (추천 리포트 생성) · OpenAI Embeddings (서비스 정보 임베딩) · RAG
-              파이프라인
-            </div>
-            <span class="stack-tag">pgvector + RAG</span>
-          </div>
-          <div class="stack-card animate delay-2">
-            <div class="stack-icon">🐍</div>
-            <div class="stack-name">Crawler</div>
-            <div class="stack-detail">
-              Python · Playwright (JS 렌더링 대응) · Spring @Scheduled (배치 트리거) · 매일 새벽 2시
-              실행
-            </div>
-            <span class="stack-tag">batch / cron</span>
-          </div>
-          <div class="stack-card animate delay-3">
-            <div class="stack-icon">🐳</div>
-            <div class="stack-name">Infra</div>
-            <div class="stack-detail">
-              Docker Compose · Nginx (Reverse Proxy) · 포트: Backend 8081 · Frontend 3000
-            </div>
-            <span class="stack-tag">ddl-auto: update</span>
-          </div>
+          <span class="stack-tag">Recharts · Sonner Toast</span>
         </div>
-      </section>
-
-      <hr class="divider" />
-
-      <!-- FEATURES -->
-      <section id="features">
-        <div class="section-num">02 &mdash; Core Features</div>
-        <h2 class="section-title">핵심 기능</h2>
-        <p class="section-sub">7가지 핵심 기능으로 구성된 SubLens의 기능 명세입니다.</p>
-
-        <div class="features-layout">
-          <div class="feature-block featured animate">
-            <div>
-              <div class="feature-num">07</div>
-              <div class="feature-title">🏆 구독 번들 최적화 추천 (AI)</div>
-              <div class="feature-desc">
-                사용자의 등록된 구독 목록을 분석하여, 통신사 결합 상품 또는 네이버플러스 멤버십을
-                통해 절약 가능한 금액과 최적 구독 조합을 AI가 자동 추천합니다. Claude API가 자연어
-                형태의 맞춤 리포트를 생성합니다.
-              </div>
-              <div class="feature-tags">
-                <span class="ftag purple">Claude API</span>
-                <span class="ftag blue">pgvector RAG</span>
-                <span class="ftag green">번들 매핑 엔진</span>
-                <span class="ftag yellow">Pro 전용</span>
-              </div>
-            </div>
-            <div
-              style="
-                background: rgba(108, 99, 255, 0.05);
-                border: 1px solid rgba(108, 99, 255, 0.15);
-                border-radius: 12px;
-                padding: 24px;
-              "
-            >
-              <div
-                style="
-                  font-family: &quot;JetBrains Mono&quot;, monospace;
-                  font-size: 0.7rem;
-                  color: var(--accent);
-                  margin-bottom: 16px;
-                  text-transform: uppercase;
-                  letter-spacing: 0.1em;
-                "
-              >
-                AI 추천 예시
-              </div>
-              <div
-                style="
-                  font-size: 0.82rem;
-                  color: var(--text);
-                  line-height: 1.8;
-                  white-space: pre-line;
-                "
-              >
-                "현재 Netflix(월 13,500원), YouTube Premium(월 14,900원), Disney+(월 9,900원)를 개별
-                구독 중이십니다.
-
-                <span style="color: var(--accent3); font-weight: 500"
-                  >→ LGU+ 유독Pick 유튜브+디즈니 번들로 전환 시 월 23,800원 → 23,800원 절약
-                  가능</span
-                >
-
-                <span style="color: var(--accent2)"
-                  >→ 네이버플러스 멤버십(4,900원) 가입 시 Netflix 광고형 포함 + 쇼핑 5% 적립"</span
-                >
-              </div>
-            </div>
+        <div class="stack-card">
+          <div class="stack-icon">🗄️</div>
+          <div class="stack-name">Database</div>
+          <div class="stack-detail">
+            PostgreSQL 16 · pgvector (임베딩) · Redis 7 (세션/캐시) · JSONB (번들 혜택 구조)
           </div>
-
-          <div class="feature-block animate delay-1">
-            <div class="feature-num">01</div>
-            <div class="feature-title">📋 구독 수동 등록/관리 CRUD</div>
-            <div class="feature-desc">
-              서비스명, 금액, 결제 주기, 갱신일, 카테고리 등을 등록하고 구독 목록을 한눈에
-              관리합니다.
-            </div>
-            <div class="feature-tags">
-              <span class="ftag blue">REST API</span>
-              <span class="ftag green">Free</span>
-            </div>
-          </div>
-
-          <div class="feature-block animate delay-2">
-            <div class="feature-num">02</div>
-            <div class="feature-title">🔔 갱신일 알림</div>
-            <div class="feature-desc">
-              갱신 D-N일 전 이메일 자동 발송. Resend API 활용. 알림 일정 커스터마이징 지원.
-            </div>
-            <div class="feature-tags">
-              <span class="ftag blue">Resend API</span>
-              <span class="ftag green">Free</span>
-            </div>
-          </div>
-
-          <div class="feature-block animate delay-1">
-            <div class="feature-num">03</div>
-            <div class="feature-title">📊 지출 분석 대시보드</div>
-            <div class="feature-desc">
-              월별 / 카테고리별 / 연간 환산 지출을 시각화. 구독 증가 추이 및 낭비 지수 제공.
-            </div>
-            <div class="feature-tags">
-              <span class="ftag purple">차트 시각화</span>
-              <span class="ftag yellow">Pro</span>
-            </div>
-          </div>
-
-          <div class="feature-block animate delay-2">
-            <div class="feature-num">04</div>
-            <div class="feature-title">🔍 pgvector 기반 대체재 추천</div>
-            <div class="feature-desc">
-              벡터 유사도 검색으로 현재 구독 서비스의 대체 서비스를 비용·기능 기준으로 추천.
-            </div>
-            <div class="feature-tags">
-              <span class="ftag blue">pgvector</span>
-              <span class="ftag yellow">Pro</span>
-            </div>
-          </div>
-
-          <div class="feature-block animate delay-1">
-            <div class="feature-num">05</div>
-            <div class="feature-title">💬 AI 챗봇 어시스턴트</div>
-            <div class="feature-desc">
-              RAG 방식으로 개인 구독 데이터 + 서비스 지식을 결합. 자연어로 구독 최적화 질문 가능.
-            </div>
-            <div class="feature-tags">
-              <span class="ftag purple">Claude API</span>
-              <span class="ftag yellow">Pro</span>
-            </div>
-          </div>
-
-          <div class="feature-block animate delay-2">
-            <div class="feature-num">06</div>
-            <div class="feature-title">📰 구독 뉴스 & 가격 변동 알림</div>
-            <div class="feature-desc">
-              주요 구독 서비스의 가격 변동, 서비스 종료, 신규 출시 정보를 크롤링해 알림 발송.
-            </div>
-            <div class="feature-tags">
-              <span class="ftag blue">크롤링</span>
-              <span class="ftag yellow">Pro</span>
-            </div>
-          </div>
+          <span class="stack-tag">postgres:16</span>
         </div>
-      </section>
+        <div class="stack-card">
+          <div class="stack-icon">🤖</div>
+          <div class="stack-name">AI / ML</div>
+          <div class="stack-detail">
+            Claude API (추천 리포트 생성) · OpenAI Embeddings (서비스 임베딩) · RAG 파이프라인
+          </div>
+          <span class="stack-tag">pgvector + RAG</span>
+        </div>
+        <div class="stack-card">
+          <div class="stack-icon">🐍</div>
+          <div class="stack-name">Crawler</div>
+          <div class="stack-detail">
+            Python · Playwright (JS 렌더링) · Spring @Scheduled (배치 트리거) · 매일 새벽 2시
+          </div>
+          <span class="stack-tag">batch / cron</span>
+        </div>
+        <div class="stack-card">
+          <div class="stack-icon">🐳</div>
+          <div class="stack-name">Infra</div>
+          <div class="stack-detail">
+            Docker Compose · Nginx (Reverse Proxy) · Backend :8080 · Frontend :3000
+          </div>
+          <span class="stack-tag">ddl-auto: update</span>
+        </div>
+      </div>
+    </section>
 
-      <hr class="divider" />
+    <hr class="divider" />
 
-      <!-- BUNDLE OPTIMIZATION -->
-      <section id="bundle" style="padding-top: 0">
-        <div class="bundle-section">
-          <div class="section-num">03 &mdash; Bundle Optimization</div>
-          <h2 class="section-title">번들 최적화 시스템</h2>
-          <p class="section-sub">
-            통신사 및 네이버플러스 번들 데이터를 수집·임베딩하여 AI 추천 엔진의 지식 기반으로
-            활용합니다.
-          </p>
-
-          <div class="provider-grid">
-            <div class="provider-card">
-              <span class="provider-emoji">📡</span>
-              <div class="provider-name">SKT T우주</div>
-              <div class="provider-detail">
-                T우주패스 시리즈<br />TVING, Wavve, YouTube,<br />Disney+, 편의점/카페 결합
-              </div>
+    <!-- FEATURES -->
+    <section id="features">
+      <div class="section-num">02 &mdash; Core Features</div>
+      <h2 class="section-title">핵심 기능</h2>
+      <p class="section-sub">7가지 핵심 기능으로 구성된 SubLens의 기능 명세입니다.</p>
+      <div class="features-layout">
+        <div class="feature-block featured">
+          <div>
+            <div class="feature-num">07</div>
+            <div class="feature-title">🏆 구독 번들 최적화 추천 (AI)</div>
+            <div class="feature-desc">
+              사용자의 등록된 구독 목록을 분석하여, 통신사 결합 상품 또는 네이버플러스 멤버십을 통해
+              절약 가능한 금액과 최적 구독 조합을 AI가 자동 추천합니다.
             </div>
-            <div class="provider-card">
-              <span class="provider-emoji">📶</span>
-              <div class="provider-name">KT 구독</div>
-              <div class="provider-detail">
-                OTT 초이스 요금제<br />Netflix, Disney+, TVING,<br />YouTube 요금제 결합
-              </div>
-            </div>
-            <div class="provider-card">
-              <span class="provider-emoji">📲</span>
-              <div class="provider-name">LGU+ 유독</div>
-              <div class="provider-detail">
-                유독Pick 번들<br />OTT + 라이프 쿠폰<br />매달 변경 가능
-              </div>
-            </div>
-            <div class="provider-card">
-              <span class="provider-emoji">🟢</span>
-              <div class="provider-name">네이버플러스</div>
-              <div class="provider-detail">
-                월 4,900원<br />Netflix/TVING/웹툰 택1<br />+ 페이 5% 적립
-              </div>
+            <div class="feature-tags">
+              <span class="ftag purple">Claude API</span><span class="ftag blue">pgvector RAG</span
+              ><span class="ftag green">번들 매핑 엔진</span
+              ><span class="ftag yellow">Pro 전용</span>
             </div>
           </div>
-
-          <div style="margin-top: 48px">
-            <div
-              style="
-                font-family: &quot;JetBrains Mono&quot;, monospace;
-                font-size: 0.7rem;
-                color: var(--muted);
-                text-transform: uppercase;
-                letter-spacing: 0.15em;
-                margin-bottom: 20px;
-              "
-            >
-              Data Pipeline
-            </div>
-            <div class="flow-diagram" style="gap: 12px">
-              <div class="flow-step">
-                <div class="flow-step-num">STEP 01</div>
-                <div class="flow-step-title">배치 크롤링</div>
-                <div class="flow-step-sub">Playwright<br />매일 새벽 2시</div>
-              </div>
-              <div class="flow-step">
-                <div class="flow-step-num">STEP 02</div>
-                <div class="flow-step-title">변경 감지</div>
-                <div class="flow-step-sub">기존 DB와 diff<br />변경분만 추출</div>
-              </div>
-              <div class="flow-step">
-                <div class="flow-step-num">STEP 03</div>
-                <div class="flow-step-title">임베딩 생성</div>
-                <div class="flow-step-sub">OpenAI Embeddings<br />번들 단위 청킹</div>
-              </div>
-              <div class="flow-step">
-                <div class="flow-step-num">STEP 04</div>
-                <div class="flow-step-title">pgvector 저장</div>
-                <div class="flow-step-sub">bundle_products<br />벡터 업서트</div>
-              </div>
-              <div class="flow-step">
-                <div class="flow-step-num">STEP 05</div>
-                <div class="flow-step-title">RAG 추천</div>
-                <div class="flow-step-sub">Claude API<br />자연어 리포트</div>
-              </div>
-            </div>
-          </div>
-
           <div
             style="
-              margin-top: 40px;
-              padding: 24px;
-              background: rgba(245, 158, 11, 0.05);
-              border: 1px solid rgba(245, 158, 11, 0.15);
+              background: rgba(108, 99, 255, 0.05);
+              border: 1px solid rgba(108, 99, 255, 0.15);
               border-radius: 12px;
+              padding: 24px;
             "
           >
             <div
               style="
                 font-family: &quot;JetBrains Mono&quot;, monospace;
                 font-size: 0.7rem;
-                color: var(--warn);
-                margin-bottom: 10px;
+                color: var(--accent);
+                margin-bottom: 16px;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
               "
             >
-              ⚠ 크롤링 제한 사항
+              AI 추천 예시
             </div>
-            <div style="font-size: 0.82rem; color: var(--muted); line-height: 1.7">
-              네이버 도메인은 직접 크롤링 제한이 있어
-              <strong style="color: var(--text)">관리자 어드민 UI를 통한 수동 업데이트</strong>로
-              대응. KT는 일부 로그인 필요 구간 존재 → 공개 헬프 페이지 위주 수집. 모든 번들 데이터는
-              <code>last_synced_at</code> 기준 30일 이상 미갱신 시 관리자 알림 발송.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <hr class="divider" />
-
-      <!-- ROADMAP -->
-      <section id="roadmap">
-        <div class="section-num">04 &mdash; Roadmap</div>
-        <h2 class="section-title">개발 로드맵</h2>
-        <p class="section-sub">
-          우선순위 기반 7단계 개발 순서. 각 단계는 이전 단계의 데이터를 기반으로 합니다.
-        </p>
-
-        <div class="roadmap">
-          <div class="roadmap-item done">
-            <div class="roadmap-phase">Phase 1 · 완료</div>
-            <div class="roadmap-title">기반 인프라 & 인증 시스템</div>
-            <div class="roadmap-desc">
-              Spring Boot + Next.js 모노레포 구성, JWT HttpOnly 쿠키 인증, Redis 토큰 캐시, Docker
-              Compose 환경 세팅 완료.
-            </div>
-            <div class="roadmap-tasks">
-              <span class="rtask">Spring Boot</span><span class="rtask">JWT Auth</span
-              ><span class="rtask">Redis</span><span class="rtask">Docker Compose</span>
-            </div>
-          </div>
-
-          <div class="roadmap-item">
-            <div class="roadmap-phase">Phase 2 · 진행중</div>
-            <div class="roadmap-title">구독 CRUD & 목록 UI</div>
-            <div class="roadmap-desc">
-              Subscription 엔티티 ERD 설계, REST API 구현, 프론트엔드 구독 목록 페이지 및 등록/수정
-              폼 완성.
-            </div>
-            <div class="roadmap-tasks">
-              <span class="rtask">ERD 설계</span><span class="rtask">REST CRUD</span
-              ><span class="rtask">구독 목록 UI</span><span class="rtask">모달 폼</span>
-            </div>
-          </div>
-
-          <div class="roadmap-item">
-            <div class="roadmap-phase">Phase 3</div>
-            <div class="roadmap-title">지출 분석 대시보드</div>
-            <div class="roadmap-desc">
-              월별 / 카테고리별 집계 API, 차트 시각화, 연간 환산 및 낭비 지수 계산 로직 구현.
-            </div>
-            <div class="roadmap-tasks">
-              <span class="rtask">집계 API</span><span class="rtask">차트 컴포넌트</span
-              ><span class="rtask">낭비 지수</span>
-            </div>
-          </div>
-
-          <div class="roadmap-item">
-            <div class="roadmap-phase">Phase 4</div>
-            <div class="roadmap-title">갱신일 알림 시스템</div>
-            <div class="roadmap-desc">
-              Resend API 기반 갱신 D-3, D-1 자동 이메일. Spring @Scheduled 배치, 알림 이력 관리.
-            </div>
-            <div class="roadmap-tasks">
-              <span class="rtask">Resend API</span><span class="rtask">@Scheduled</span
-              ><span class="rtask">notification_logs</span>
-            </div>
-          </div>
-
-          <div class="roadmap-item">
-            <div class="roadmap-phase">Phase 5</div>
-            <div class="roadmap-title">pgvector 세팅 & 서비스 DB 구축</div>
-            <div class="roadmap-desc">
-              PostgreSQL pgvector 확장 활성화, 서비스 정보 임베딩 데이터 적재, 유사도 검색 API 개발.
-            </div>
-            <div class="roadmap-tasks">
-              <span class="rtask">pgvector</span><span class="rtask">OpenAI Embeddings</span
-              ><span class="rtask">서비스 DB</span>
-            </div>
-          </div>
-
-          <div class="roadmap-item future">
-            <div class="roadmap-phase">Phase 6</div>
-            <div class="roadmap-title">번들 최적화 추천 엔진</div>
-            <div class="roadmap-desc">
-              통신사/네이버 번들 크롤러 구축, bundle_products 테이블 적재, 구독 매핑 로직, Claude
-              API 자연어 리포트 생성.
-            </div>
-            <div class="roadmap-tasks">
-              <span class="rtask">Playwright 크롤러</span><span class="rtask">번들 매핑</span
-              ><span class="rtask">절감액 계산</span><span class="rtask">Claude API</span>
-            </div>
-          </div>
-
-          <div class="roadmap-item future">
-            <div class="roadmap-phase">Phase 7</div>
-            <div class="roadmap-title">AI 챗봇 & 가격 변동 알림</div>
-            <div class="roadmap-desc">
-              RAG 기반 챗봇 어시스턴트 완성, 구독 서비스 가격 변동 크롤링 및 알림 연동.
-            </div>
-            <div class="roadmap-tasks">
-              <span class="rtask">RAG 챗봇</span><span class="rtask">가격 변동 알림</span
-              ><span class="rtask">뉴스 크롤링</span>
+            <div
+              style="
+                font-size: 0.82rem;
+                color: var(--text);
+                line-height: 1.8;
+                white-space: pre-line;
+              "
+            >
+              "현재 Netflix, YouTube Premium, Disney+를 개별 구독 중이십니다.
+              <span style="color: var(--accent3); font-weight: 500"
+                >→ LGU+ 유독Pick 번들 전환 시 월 ₩23,800 절약 가능</span
+              >
+              <span style="color: var(--accent2)"
+                >→ 네이버플러스 멤버십으로 Netflix 광고형 + 쇼핑 5% 적립"</span
+              >
             </div>
           </div>
         </div>
-      </section>
+        <div class="feature-block">
+          <div class="feature-num">01</div>
+          <div class="feature-title">📋 구독 수동 등록/관리 CRUD</div>
+          <div class="feature-desc">
+            서비스 카탈로그에서 선택하거나 직접 입력. 결제 주기(월/주/연)별 갱신 기준일 자동 계산.
+            상태 관리(활성/일시정지/해지).
+          </div>
+          <div class="feature-tags">
+            <span class="ftag blue">REST API</span><span class="ftag green">Free (5개 제한)</span>
+          </div>
+        </div>
+        <div class="feature-block">
+          <div class="feature-num">02</div>
+          <div class="feature-title">🔔 갱신일 알림</div>
+          <div class="feature-desc">
+            D-N일 전 이메일 자동 발송. 알림 일정 커스터마이징(1일/3일/7일/직접입력). Resend API
+            활용.
+          </div>
+          <div class="feature-tags">
+            <span class="ftag blue">Resend API</span><span class="ftag green">Free</span>
+          </div>
+        </div>
+        <div class="feature-block">
+          <div class="feature-num">03</div>
+          <div class="feature-title">📊 지출 분석 대시보드</div>
+          <div class="feature-desc">
+            월별/카테고리별/연간 환산 지출 시각화. 전월 대비 증감, 서비스별 순위, 기간별 비교
+            리포트. Recharts 기반 차트.
+          </div>
+          <div class="feature-tags">
+            <span class="ftag purple">Recharts</span><span class="ftag yellow">Pro</span>
+          </div>
+        </div>
+        <div class="feature-block">
+          <div class="feature-num">04</div>
+          <div class="feature-title">🔍 pgvector 기반 대체재 추천</div>
+          <div class="feature-desc">
+            벡터 유사도 검색으로 현재 구독 서비스의 대체 서비스를 비용·기능 기준으로 추천.
+          </div>
+          <div class="feature-tags">
+            <span class="ftag blue">pgvector</span><span class="ftag yellow">Pro</span>
+          </div>
+        </div>
+        <div class="feature-block">
+          <div class="feature-num">05</div>
+          <div class="feature-title">💬 AI 챗봇 어시스턴트</div>
+          <div class="feature-desc">
+            RAG 방식으로 개인 구독 데이터 + 서비스 지식을 결합. 자연어로 구독 최적화 질문 가능.
+          </div>
+          <div class="feature-tags">
+            <span class="ftag purple">Claude API</span><span class="ftag yellow">Pro</span>
+          </div>
+        </div>
+        <div class="feature-block">
+          <div class="feature-num">06</div>
+          <div class="feature-title">🛠️ 어드민 관리 시스템</div>
+          <div class="feature-desc">
+            ADMIN 권한 전용. 서비스 카탈로그 및 카테고리 직접 관리. 로고 유효성 자동 검증 후 DB
+            저장.
+          </div>
+          <div class="feature-tags">
+            <span class="ftag purple">ADMIN Role</span><span class="ftag blue">CRUD</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <hr class="divider" />
+    <hr class="divider" />
 
-      <!-- DATA ARCHITECTURE -->
-      <section id="data">
-        <div class="section-num">05 &mdash; Data Architecture</div>
-        <h2 class="section-title">핵심 엔티티 설계</h2>
-        <p class="section-sub">번들 최적화 기능을 포함한 전체 도메인 ERD 요약.</p>
+    <!-- SCREEN PLANNING -->
+    <section id="screens">
+      <div class="section-num">03 &mdash; Screen Planning</div>
+      <h2 class="section-title">화면 기획</h2>
+      <p class="section-sub">SubLens의 전체 화면 구성과 현재 개발 현황입니다.</p>
 
-        <div class="entity-grid">
-          <div class="entity-card">
-            <div class="entity-header">subscriptions</div>
-            <div class="entity-fields">
-              <div class="entity-field">
-                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+      <div class="screens-nav">
+        <a class="screen-nav-btn" href="#screen-auth">인증</a>
+        <a class="screen-nav-btn" href="#screen-dashboard">대시보드</a>
+        <a class="screen-nav-btn" href="#screen-subscriptions">구독 목록</a>
+        <a class="screen-nav-btn" href="#screen-analytics">지출 분석</a>
+        <a class="screen-nav-btn" href="#screen-admin">어드민</a>
+        <a class="screen-nav-btn" href="#screen-ai">AI 도구</a>
+      </div>
+
+      <!-- 인증 -->
+      <div class="screen-group" id="screen-auth">
+        <div class="screen-group-title">인증 화면</div>
+        <div class="screen-group-sub">
+          로그인 · 회원가입 · 비밀번호 재설정. JWT HttpOnly Cookie 기반. 인터셉터 없는 plainApi
+          사용으로 무한 리다이렉트 방지.
+        </div>
+        <div class="screen-cards">
+          <div class="screen-card">
+            <div class="screen-preview medium">
+              <div class="mini-auth">
+                <div class="mini-auth-box">
+                  <div class="mini-auth-logo"></div>
+                  <div
+                    style="
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.08);
+                      border-radius: 2px;
+                      width: 60px;
+                      margin-bottom: 4px;
+                    "
+                  ></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-submit"></div>
+                  <div class="mini-link"></div>
+                </div>
               </div>
-              <div class="entity-field">
-                <span class="ef-name ef-fk">user_id</span><span class="ef-type">uuid FK</span>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-free">Free</span>
               </div>
-              <div class="entity-field">
-                <span class="ef-name">service_name</span><span class="ef-type">varchar</span>
+              <div class="screen-name">로그인</div>
+              <div class="screen-path">/login</div>
+              <div class="screen-desc">
+                이메일 + 비밀번호 로그인. 성공 시 access_token + refresh_token을 HttpOnly 쿠키로
+                발급.
               </div>
-              <div class="entity-field">
-                <span class="ef-name">amount</span><span class="ef-type">decimal</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">billing_cycle</span><span class="ef-type">enum</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">next_billing_date</span><span class="ef-type">date</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">status</span><span class="ef-type">enum</span>
+              <div class="screen-features">
+                <div class="sf">이메일/비밀번호 유효성 검사</div>
+                <div class="sf">실패 시 에러 Toast 표시</div>
+                <div class="sf">로그인 후 /dashboard 리다이렉트</div>
               </div>
             </div>
           </div>
 
-          <div class="entity-card">
-            <div class="entity-header">bundle_products</div>
-            <div class="entity-fields">
-              <div class="entity-field">
-                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+          <div class="screen-card">
+            <div class="screen-preview medium">
+              <div class="mini-auth">
+                <div class="mini-auth-box" style="gap: 5px">
+                  <div class="mini-auth-logo"></div>
+                  <div
+                    style="
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.08);
+                      border-radius: 2px;
+                      width: 60px;
+                      margin-bottom: 2px;
+                    "
+                  ></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-submit"></div>
+                </div>
               </div>
-              <div class="entity-field">
-                <span class="ef-name">provider</span><span class="ef-type">enum</span>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-free">Free</span>
               </div>
-              <div class="entity-field">
-                <span class="ef-name">bundle_name</span><span class="ef-type">varchar</span>
+              <div class="screen-name">회원가입</div>
+              <div class="screen-path">/signup</div>
+              <div class="screen-desc">
+                이름 · 이메일 · 비밀번호 · 전화번호 입력. 이메일 중복 검사 후 BCrypt 해시 저장. 기본
+                Role = USER.
               </div>
-              <div class="entity-field">
-                <span class="ef-name">monthly_price</span><span class="ef-type">decimal</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">included_services</span><span class="ef-type">jsonb</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">source_url</span><span class="ef-type">varchar</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">last_synced_at</span><span class="ef-type">timestamp</span>
+              <div class="screen-features">
+                <div class="sf">이메일 중복 시 409 DUPLICATE_EMAIL 처리</div>
+                <div class="sf">성공 후 로그인 페이지 이동</div>
               </div>
             </div>
           </div>
 
-          <div class="entity-card">
-            <div class="entity-header">bundle_recommendations</div>
-            <div class="entity-fields">
-              <div class="entity-field">
-                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name ef-fk">user_id</span><span class="ef-type">uuid FK</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name ef-fk">bundle_id</span><span class="ef-type">uuid FK</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">current_cost</span><span class="ef-type">decimal</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">estimated_cost</span><span class="ef-type">decimal</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">monthly_savings</span><span class="ef-type">decimal</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">ai_summary</span><span class="ef-type">text</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="entity-card">
-            <div class="entity-header">subscription_categories</div>
-            <div class="entity-fields">
-              <div class="entity-field">
-                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">name</span><span class="ef-type">varchar</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">icon</span><span class="ef-type">varchar</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">color</span><span class="ef-type">varchar</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">is_default</span><span class="ef-type">boolean</span>
+          <div class="screen-card">
+            <div class="screen-preview medium">
+              <div class="mini-auth">
+                <div class="mini-auth-box" style="gap: 6px">
+                  <div class="mini-auth-logo"></div>
+                  <div
+                    style="
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.08);
+                      border-radius: 2px;
+                      width: 80px;
+                      margin-bottom: 2px;
+                    "
+                  ></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-submit" style="background: rgba(56, 189, 248, 0.5)"></div>
+                  <div
+                    style="
+                      height: 12px;
+                      background: rgba(255, 255, 255, 0.03);
+                      border: 1px solid rgba(255, 255, 255, 0.08);
+                      border-radius: 3px;
+                    "
+                  ></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-input"></div>
+                  <div class="mini-submit"></div>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div class="entity-card">
-            <div class="entity-header">notification_logs</div>
-            <div class="entity-fields">
-              <div class="entity-field">
-                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-free">Free</span>
               </div>
-              <div class="entity-field">
-                <span class="ef-name ef-fk">subscription_id</span
-                ><span class="ef-type">uuid FK</span>
+              <div class="screen-name">비밀번호 재설정</div>
+              <div class="screen-path">/forgot-password · /reset-password</div>
+              <div class="screen-desc">
+                이메일 입력 → 재설정 링크 발송(Resend API). 링크 클릭 → 토큰 검증 → 새 비밀번호
+                입력. Redis 듀얼키로 10분 TTL 관리.
               </div>
-              <div class="entity-field">
-                <span class="ef-name">type</span><span class="ef-type">enum</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">status</span><span class="ef-type">enum</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">sent_to</span><span class="ef-type">varchar</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">sent_at</span><span class="ef-type">timestamp</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="entity-card">
-            <div class="entity-header">service_embeddings</div>
-            <div class="entity-fields">
-              <div class="entity-field">
-                <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">service_name</span><span class="ef-type">varchar</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">content</span><span class="ef-type">text</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">embedding</span><span class="ef-type">vector(1536)</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">category</span><span class="ef-type">varchar</span>
-              </div>
-              <div class="entity-field">
-                <span class="ef-name">updated_at</span><span class="ef-type">timestamp</span>
+              <div class="screen-features">
+                <div class="sf">UUID 토큰 발급 + Redis 저장 (10분 TTL)</div>
+                <div class="sf">유저당 유효 토큰 항상 1개만 존재</div>
+                <div class="sf">사용 후 즉시 토큰 삭제 (일회성)</div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <hr class="divider" />
-
-      <!-- PRICING -->
-      <section id="pricing">
-        <div class="section-num">06 &mdash; Monetization</div>
-        <h2 class="section-title">수익화 모델</h2>
-        <p class="section-sub">Freemium 구조로 빠른 사용자 확보 후 Pro 전환율 극대화.</p>
-
-        <div class="pricing-grid">
-          <div class="price-card">
-            <div class="price-tier">Free Tier</div>
-            <div class="price-amount"><sup>₩</sup>0<sub>/월</sub></div>
-            <div class="price-desc">
-              구독 관리의 핵심 기능을 무료로 제공. 서비스 가치 체험 후 자연스러운 Pro 전환 유도.
+      <!-- 대시보드 -->
+      <div class="screen-group" id="screen-dashboard">
+        <div class="screen-group-title">대시보드</div>
+        <div class="screen-group-sub">
+          로그인 후 메인 화면. 이번 주/달 지출 예정, 갱신 일정, 카테고리 분석을 한눈에 파악.
+        </div>
+        <div class="screen-cards">
+          <div class="screen-card" style="grid-column: 1/-1">
+            <div class="screen-preview tall">
+              <div class="mini-sidebar">
+                <div class="mini-logo"></div>
+                <div class="mini-nav-item active"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div
+                  style="height: 1px; background: rgba(255, 255, 255, 0.06); margin: 6px 8px"
+                ></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item inactive"></div>
+              </div>
+              <div class="mini-content">
+                <div class="mini-topbar">
+                  <div class="mini-title"></div>
+                  <div class="mini-btn"></div>
+                </div>
+                <div class="mini-metric-row">
+                  <div class="mini-metric"></div>
+                  <div class="mini-metric"></div>
+                  <div class="mini-metric"></div>
+                  <div class="mini-metric"></div>
+                </div>
+                <div style="display: flex; gap: 5px; flex: 1">
+                  <div
+                    style="
+                      flex: 1.4;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 8px;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 4px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.4);
+                        border-radius: 2px;
+                        width: 60px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        padding: 4px 0;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                      "
+                    >
+                      <div class="mini-logo-circle"></div>
+                      <div
+                        style="
+                          flex: 1;
+                          height: 5px;
+                          background: rgba(255, 255, 255, 0.12);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 30px;
+                          height: 5px;
+                          background: rgba(255, 255, 255, 0.08);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                    <div
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        padding: 4px 0;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                      "
+                    >
+                      <div
+                        class="mini-logo-circle"
+                        style="background: rgba(56, 189, 248, 0.5)"
+                      ></div>
+                      <div
+                        style="
+                          flex: 1;
+                          height: 5px;
+                          background: rgba(255, 255, 255, 0.12);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 30px;
+                          height: 5px;
+                          background: rgba(255, 255, 255, 0.08);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; padding: 4px 0">
+                      <div
+                        class="mini-logo-circle"
+                        style="background: rgba(52, 211, 153, 0.5)"
+                      ></div>
+                      <div
+                        style="
+                          flex: 1;
+                          height: 5px;
+                          background: rgba(255, 255, 255, 0.12);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 30px;
+                          height: 5px;
+                          background: rgba(255, 255, 255, 0.08);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 8px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.4);
+                        border-radius: 2px;
+                        width: 60px;
+                        margin-bottom: 6px;
+                      "
+                    ></div>
+                    <div class="mini-chart-bar">
+                      <div class="bar" style="height: 40%"></div>
+                      <div class="bar" style="height: 60%"></div>
+                      <div class="bar" style="height: 80%"></div>
+                      <div class="bar hi" style="height: 100%"></div>
+                      <div class="bar" style="height: 70%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 5px">
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 7px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.3);
+                        border-radius: 2px;
+                        margin-bottom: 5px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        height: 10px;
+                        background: rgba(255, 255, 255, 0.15);
+                        border-radius: 2px;
+                        width: 50%;
+                      "
+                    ></div>
+                  </div>
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 7px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.3);
+                        border-radius: 2px;
+                        margin-bottom: 5px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        height: 10px;
+                        background: rgba(255, 255, 255, 0.15);
+                        border-radius: 2px;
+                        width: 50%;
+                      "
+                    ></div>
+                  </div>
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 7px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.3);
+                        border-radius: 2px;
+                        margin-bottom: 5px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        height: 10px;
+                        background: rgba(255, 255, 255, 0.15);
+                        border-radius: 2px;
+                        width: 50%;
+                      "
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="price-feature">구독 등록 최대 5개</div>
-            <div class="price-feature">갱신일 이메일 알림</div>
-            <div class="price-feature">기본 지출 요약</div>
-            <div class="price-feature muted">지출 분석 대시보드</div>
-            <div class="price-feature muted">AI 대체재 추천</div>
-            <div class="price-feature muted">번들 최적화 추천</div>
-            <div class="price-feature muted">AI 챗봇 어시스턴트</div>
-          </div>
-          <div class="price-card pro">
-            <div class="price-tier">Pro Tier</div>
-            <div class="price-amount"><sup>$</sup>5~9<sub>/월</sub></div>
-            <div class="price-desc">
-              무제한 구독 등록과 AI 기반 최적화 기능 전체 이용 가능. 번들 최적화 리포트 월 1회 갱신.
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-free">Free</span>
+              </div>
+              <div class="screen-name">메인 대시보드</div>
+              <div class="screen-path">/dashboard</div>
+              <div class="screen-desc">
+                구독 현황을 한눈에 파악하는 메인 화면. 별도 대시보드 API 없이 기존 훅에서 프론트
+                집계.
+              </div>
+              <div class="screen-features">
+                <div class="sf">
+                  상단 요약 지표 4개: 이번 달 지출 예정 / 이번 주 지출 예정 / 활성 구독 수 / 연간
+                  예상
+                </div>
+                <div class="sf">이번 달 갱신 예정 리스트 (D-day 뱃지, 이번 달/다음 달 구분)</div>
+                <div class="sf">카테고리별 가로 바 차트 + 비중 인사이트 문구</div>
+                <div class="sf">하단 3열: 이번 주 지출 / 이번 달 지출 / 구독 현황 요약</div>
+              </div>
             </div>
-            <div class="price-feature">구독 등록 무제한</div>
-            <div class="price-feature">갱신일 이메일 알림</div>
-            <div class="price-feature">전체 지출 분석 리포트</div>
-            <div class="price-feature">AI 기반 대체재 추천</div>
-            <div class="price-feature">통신사/네이버 번들 최적화</div>
-            <div class="price-feature">AI 챗봇 어시스턴트</div>
-            <div class="price-feature">번들 변경 알림 (요금제 개편 시)</div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- FOOTER -->
-      <footer>
-        <div class="footer-left">Sub<span>Lens</span></div>
-        <div class="footer-meta">
-          Project Proposal v1.0<br />
-          작성일: 2026년 3월<br />
-          기술 스택: Spring Boot · Next.js · PostgreSQL · Claude API
+      <!-- 구독 목록 -->
+      <div class="screen-group" id="screen-subscriptions">
+        <div class="screen-group-title">구독 목록</div>
+        <div class="screen-group-sub">
+          구독 CRUD 메인 화면. 카드 UI + 케밥 메뉴 + 등록/수정 모달.
         </div>
-      </footer>
+        <div class="screen-cards">
+          <div class="screen-card">
+            <div class="screen-preview tall">
+              <div class="mini-sidebar">
+                <div class="mini-logo"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item active"></div>
+                <div class="mini-nav-item inactive"></div>
+              </div>
+              <div class="mini-content">
+                <div class="mini-topbar">
+                  <div class="mini-title"></div>
+                  <div class="mini-btn"></div>
+                </div>
+                <div style="display: flex; gap: 4px; margin-bottom: 6px">
+                  <div
+                    style="
+                      flex: 1;
+                      height: 14px;
+                      background: rgba(255, 255, 255, 0.05);
+                      border-radius: 4px;
+                      border: 1px solid rgba(255, 255, 255, 0.08);
+                    "
+                  ></div>
+                  <div
+                    style="
+                      width: 60px;
+                      height: 14px;
+                      background: rgba(108, 99, 255, 0.2);
+                      border-radius: 4px;
+                    "
+                  ></div>
+                </div>
+                <div class="mini-card-row">
+                  <div class="mini-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center">
+                      <div class="mini-card-logo"></div>
+                      <div
+                        style="
+                          width: 20px;
+                          height: 6px;
+                          background: rgba(52, 211, 153, 0.4);
+                          border-radius: 99px;
+                        "
+                      ></div>
+                    </div>
+                    <div class="mini-card-line" style="width: 70%"></div>
+                    <div class="mini-card-line short"></div>
+                    <div class="mini-card-amount"></div>
+                    <div class="mini-card-line short" style="margin-top: 2px"></div>
+                  </div>
+                  <div class="mini-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center">
+                      <div class="mini-card-logo" style="background: rgba(56, 189, 248, 0.4)"></div>
+                      <div
+                        style="
+                          width: 20px;
+                          height: 6px;
+                          background: rgba(52, 211, 153, 0.4);
+                          border-radius: 99px;
+                        "
+                      ></div>
+                    </div>
+                    <div class="mini-card-line" style="width: 80%"></div>
+                    <div class="mini-card-line short"></div>
+                    <div class="mini-card-amount"></div>
+                    <div class="mini-card-line short" style="margin-top: 2px"></div>
+                  </div>
+                  <div class="mini-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center">
+                      <div class="mini-card-logo" style="background: rgba(52, 211, 153, 0.4)"></div>
+                      <div
+                        style="
+                          width: 20px;
+                          height: 6px;
+                          background: rgba(245, 158, 11, 0.4);
+                          border-radius: 99px;
+                        "
+                      ></div>
+                    </div>
+                    <div class="mini-card-line" style="width: 65%"></div>
+                    <div class="mini-card-line short"></div>
+                    <div class="mini-card-amount"></div>
+                    <div class="mini-card-line short" style="margin-top: 2px"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-free">Free</span>
+              </div>
+              <div class="screen-name">구독 목록</div>
+              <div class="screen-path">/subscriptions</div>
+              <div class="screen-desc">
+                등록된 구독을 카드 그리드로 표시. 상태별 필터(전체/활성/일시정지/해지) + 서비스명
+                검색 + 정렬.
+              </div>
+              <div class="screen-features">
+                <div class="sf">
+                  카드: 서비스 로고(ServiceLogo 컴포넌트) + 이름 + 카테고리 + 금액 + 갱신일 + 상태
+                  뱃지
+                </div>
+                <div class="sf">케밥 메뉴(⋮): 수정 / 일시정지·재개 / 삭제</div>
+                <div class="sf">서비스명 옆 외부링크(↗) 아이콘 → 플랫폼 구독 페이지 이동</div>
+                <div class="sf">빈 상태: "첫 구독 추가하기" CTA 표시</div>
+              </div>
+            </div>
+          </div>
 
-      <script>
-        // Intersection Observer for animations
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                entry.target.style.opacity = "1";
-                entry.target.style.transform = "none";
-              }
-            });
-          },
-          { threshold: 0.1 }
-        );
+          <div class="screen-card">
+            <div class="screen-preview tall">
+              <div class="mini-sidebar" style="opacity: 0.3">
+                <div class="mini-logo"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item active"></div>
+              </div>
+              <div class="mini-content" style="opacity: 0.3">
+                <div class="mini-card-row" style="flex: 1">
+                  <div class="mini-card"></div>
+                </div>
+              </div>
+              <div class="mini-modal-overlay">
+                <div class="mini-modal">
+                  <div class="mini-modal-title"></div>
+                  <div class="mini-modal-label"></div>
+                  <div class="mini-modal-select"></div>
+                  <div class="mini-modal-label"></div>
+                  <div class="mini-modal-select"></div>
+                  <div style="display: flex; gap: 4px">
+                    <div style="flex: 1">
+                      <div class="mini-modal-label" style="margin-bottom: 3px"></div>
+                      <div class="mini-modal-select"></div>
+                    </div>
+                    <div style="flex: 1">
+                      <div class="mini-modal-label" style="margin-bottom: 3px"></div>
+                      <div class="mini-modal-select"></div>
+                    </div>
+                  </div>
+                  <div class="mini-modal-label"></div>
+                  <div class="mini-modal-select"></div>
+                  <div class="mini-modal-label"></div>
+                  <div class="mini-modal-select"></div>
+                  <div class="mini-modal-btns">
+                    <div class="mini-modal-btn cancel"></div>
+                    <div class="mini-modal-btn confirm"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-free">Free</span>
+              </div>
+              <div class="screen-name">구독 등록/수정 모달</div>
+              <div class="screen-path">Modal overlay</div>
+              <div class="screen-desc">
+                구독 추가 및 수정 시 표시되는 모달. billingCycle 선택에 따라 갱신 기준일 입력 필드
+                동적 변경.
+              </div>
+              <div class="screen-features">
+                <div class="sf">서비스 선택: 카탈로그 드롭다운 (검색 포함) + 직접입력 옵션</div>
+                <div class="sf">
+                  결제 주기별 동적 필드: MONTHLY→매달 몇 일 / WEEKLY→요일 / YEARLY→월+일
+                </div>
+                <div class="sf">갱신 알림: 없음/1일/3일/7일/직접입력 선택</div>
+                <div class="sf">next_billing_date 서버에서 자동 계산 (수동 입력 없음)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        document
-          .querySelectorAll(
-            ".roadmap-item, .stack-card, .feature-block, .provider-card, .entity-card"
-          )
-          .forEach((el) => {
-            el.style.opacity = "0";
-            el.style.transform = "translateY(20px)";
-            el.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-            observer.observe(el);
+      <!-- 지출 분석 -->
+      <div class="screen-group" id="screen-analytics">
+        <div class="screen-group-title">지출 분석</div>
+        <div class="screen-group-sub">
+          월별 지출 추이, 카테고리 비중, 서비스별 순위를 시각화. Recharts 기반 차트.
+        </div>
+        <div class="screen-cards">
+          <div class="screen-card" style="grid-column: 1/-1">
+            <div class="screen-preview tall">
+              <div class="mini-sidebar">
+                <div class="mini-logo"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item active"></div>
+              </div>
+              <div class="mini-content">
+                <div class="mini-topbar">
+                  <div class="mini-title"></div>
+                  <div style="display: flex; gap: 3px">
+                    <div
+                      style="
+                        width: 20px;
+                        height: 10px;
+                        background: rgba(108, 99, 255, 0.6);
+                        border-radius: 3px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        width: 20px;
+                        height: 10px;
+                        background: rgba(255, 255, 255, 0.06);
+                        border-radius: 3px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        width: 20px;
+                        height: 10px;
+                        background: rgba(255, 255, 255, 0.06);
+                        border-radius: 3px;
+                      "
+                    ></div>
+                    <div
+                      style="
+                        width: 20px;
+                        height: 10px;
+                        background: rgba(255, 255, 255, 0.06);
+                        border-radius: 3px;
+                      "
+                    ></div>
+                  </div>
+                </div>
+                <div class="mini-metric-row">
+                  <div class="mini-metric"></div>
+                  <div class="mini-metric"></div>
+                  <div class="mini-metric"></div>
+                  <div class="mini-metric"></div>
+                </div>
+                <div style="display: flex; gap: 5px; flex: 1">
+                  <div
+                    style="
+                      flex: 1.5;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 8px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.4);
+                        border-radius: 2px;
+                        width: 60px;
+                        margin-bottom: 6px;
+                      "
+                    ></div>
+                    <div class="mini-chart-bar" style="height: 80px">
+                      <div class="bar" style="height: 50%"></div>
+                      <div class="bar" style="height: 70%"></div>
+                      <div class="bar" style="height: 90%"></div>
+                      <div class="bar hi" style="height: 100%"></div>
+                      <div class="bar" style="height: 75%"></div>
+                      <div class="bar" style="height: 85%"></div>
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 8px;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    "
+                  >
+                    <div
+                      style="
+                        width: 70px;
+                        height: 70px;
+                        border-radius: 50%;
+                        border: 12px solid rgba(108, 99, 255, 0.5);
+                        position: relative;
+                      "
+                    >
+                      <div
+                        style="
+                          position: absolute;
+                          top: -12px;
+                          right: -12px;
+                          width: 30px;
+                          height: 30px;
+                          border-radius: 50%;
+                          border: 12px solid rgba(52, 211, 153, 0.5);
+                          clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 5px">
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 7px;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 4px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.3);
+                        border-radius: 2px;
+                        width: 60px;
+                      "
+                    ></div>
+                    <div style="display: flex; align-items: center; gap: 4px">
+                      <div class="mini-logo-circle" style="width: 12px; height: 12px"></div>
+                      <div
+                        style="
+                          flex: 1;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.1);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 20px;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.15);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px">
+                      <div
+                        class="mini-logo-circle"
+                        style="width: 12px; height: 12px; background: rgba(56, 189, 248, 0.4)"
+                      ></div>
+                      <div
+                        style="
+                          flex: 1;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.1);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 20px;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.15);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 7px;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 5px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.3);
+                        border-radius: 2px;
+                        width: 60px;
+                      "
+                    ></div>
+                    <div style="display: flex; align-items: center; gap: 3px">
+                      <div
+                        style="
+                          height: 5px;
+                          background: rgba(108, 99, 255, 0.5);
+                          border-radius: 2px;
+                          width: 70%;
+                        "
+                      ></div>
+                      <div style="font-size: 4px; color: rgba(255, 255, 255, 0.3)">.</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 3px">
+                      <div
+                        style="
+                          height: 5px;
+                          background: rgba(52, 211, 153, 0.5);
+                          border-radius: 2px;
+                          width: 45%;
+                        "
+                      ></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 3px">
+                      <div
+                        style="
+                          height: 5px;
+                          background: rgba(56, 189, 248, 0.5);
+                          border-radius: 2px;
+                          width: 30%;
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      flex: 1;
+                      background: rgba(255, 255, 255, 0.03);
+                      border-radius: 6px;
+                      border: 1px solid rgba(255, 255, 255, 0.06);
+                      padding: 7px;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 4px;
+                    "
+                  >
+                    <div
+                      style="
+                        height: 5px;
+                        background: rgba(108, 99, 255, 0.3);
+                        border-radius: 2px;
+                        width: 60px;
+                      "
+                    ></div>
+                    <div style="display: flex; justify-content: space-between">
+                      <div
+                        style="
+                          width: 40px;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.1);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 30px;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.15);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between">
+                      <div
+                        style="
+                          width: 40px;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.1);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 30px;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.15);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between">
+                      <div
+                        style="
+                          width: 40px;
+                          height: 4px;
+                          background: rgba(255, 255, 255, 0.1);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                      <div
+                        style="
+                          width: 30px;
+                          height: 4px;
+                          background: rgba(245, 158, 11, 0.4);
+                          border-radius: 2px;
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-pro">Pro</span>
+              </div>
+              <div class="screen-name">지출 분석</div>
+              <div class="screen-path">/analytics</div>
+              <div class="screen-desc">
+                월별 지출 추이부터 카테고리 비중까지 구독 지출 전체를 시각화. 기간
+                탭(3개월/6개월/1년/전체)으로 범위 선택.
+              </div>
+              <div class="screen-features">
+                <div class="sf">
+                  상단 요약 4개: 총 누적 / 월 평균 / 전월 대비(증감 뱃지) / 연간 예상
+                </div>
+                <div class="sf">
+                  월별 막대 차트 (Recharts BarChart) + 카테고리 도넛 차트 (Recharts PieChart)
+                </div>
+                <div class="sf">서비스별 지출 순위 (로고 + 비중%)</div>
+                <div class="sf">카테고리별 가로 바 + 기간별 비교 수치 테이블</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 어드민 -->
+      <div class="screen-group" id="screen-admin">
+        <div class="screen-group-title">어드민 관리</div>
+        <div class="screen-group-sub">
+          ADMIN Role 전용. 사이드바에 조건부 노출. isLoading 중 skeleton으로 깜빡임 방지. 직접 URL
+          접근 시 /dashboard 리다이렉트.
+        </div>
+        <div class="screen-cards">
+          <div class="screen-card">
+            <div class="screen-preview tall">
+              <div class="mini-sidebar">
+                <div class="mini-logo"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div
+                  style="height: 1px; background: rgba(255, 255, 255, 0.06); margin: 4px 8px"
+                ></div>
+                <div
+                  class="mini-nav-item inactive"
+                  style="background: rgba(239, 68, 68, 0.15)"
+                ></div>
+                <div class="mini-nav-item active" style="background: rgba(239, 68, 68, 0.4)"></div>
+              </div>
+              <div class="mini-content">
+                <div class="mini-topbar">
+                  <div class="mini-title"></div>
+                  <div class="mini-btn"></div>
+                </div>
+                <div
+                  style="
+                    height: 16px;
+                    background: rgba(255, 255, 255, 0.04);
+                    border-radius: 4px;
+                    margin-bottom: 6px;
+                    display: flex;
+                    align-items: center;
+                    padding: 0 6px;
+                    gap: 4px;
+                  "
+                >
+                  <div
+                    style="
+                      width: 40px;
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.1);
+                      border-radius: 2px;
+                    "
+                  ></div>
+                  <div style="flex: 1"></div>
+                  <div
+                    style="
+                      width: 30px;
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.08);
+                      border-radius: 2px;
+                    "
+                  ></div>
+                  <div
+                    style="
+                      width: 25px;
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.08);
+                      border-radius: 2px;
+                    "
+                  ></div>
+                  <div
+                    style="
+                      width: 20px;
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.08);
+                      border-radius: 2px;
+                    "
+                  ></div>
+                  <div
+                    style="
+                      width: 20px;
+                      height: 5px;
+                      background: rgba(255, 255, 255, 0.08);
+                      border-radius: 2px;
+                    "
+                  ></div>
+                </div>
+                <div
+                  style="
+                    flex: 1;
+                    background: rgba(255, 255, 255, 0.02);
+                    border-radius: 5px;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    overflow: hidden;
+                  "
+                >
+                  <div class="mini-table-row" style="background: rgba(255, 255, 255, 0.04)">
+                    <div class="mini-logo-circle" style="width: 10px; height: 10px"></div>
+                    <div class="mini-col w3"></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w4"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      class="mini-logo-circle"
+                      style="width: 10px; height: 10px; background: rgba(56, 189, 248, 0.4)"
+                    ></div>
+                    <div class="mini-col w3"></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w4"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      class="mini-logo-circle"
+                      style="width: 10px; height: 10px; background: rgba(52, 211, 153, 0.4)"
+                    ></div>
+                    <div class="mini-col w3"></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w4"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      class="mini-logo-circle"
+                      style="width: 10px; height: 10px; background: rgba(245, 158, 11, 0.4)"
+                    ></div>
+                    <div class="mini-col w3"></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w4"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      class="mini-logo-circle"
+                      style="width: 10px; height: 10px; background: rgba(239, 68, 68, 0.4)"
+                    ></div>
+                    <div class="mini-col w3"></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w4"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-admin">ADMIN</span>
+              </div>
+              <div class="screen-name">서비스 관리</div>
+              <div class="screen-path">/admin/services</div>
+              <div class="screen-desc">
+                구독 서비스 카탈로그 관리. 로고 도메인 기반 자동 유효성 검증 (Google Favicon API,
+                Content-Length 726 = 빈 아이콘 판별).
+              </div>
+              <div class="screen-features">
+                <div class="sf">
+                  테이블: 로고(ServiceLogo) / 이름 / 카테고리 / URL / 활성여부 / 순서
+                </div>
+                <div class="sf">카테고리 필터 셀렉트</div>
+                <div class="sf">추가/수정 모달: logo_domain 입력 시 실시간 미리보기</div>
+                <div class="sf">
+                  로고 유효성은 등록 시점에 백엔드에서 1회만 검증 후 저장 (런타임 fetch 없음)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="screen-card">
+            <div class="screen-preview tall">
+              <div class="mini-sidebar">
+                <div class="mini-logo"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div class="mini-nav-item inactive"></div>
+                <div
+                  style="height: 1px; background: rgba(255, 255, 255, 0.06); margin: 4px 8px"
+                ></div>
+                <div class="mini-nav-item active" style="background: rgba(239, 68, 68, 0.4)"></div>
+                <div
+                  class="mini-nav-item inactive"
+                  style="background: rgba(239, 68, 68, 0.15)"
+                ></div>
+              </div>
+              <div class="mini-content">
+                <div class="mini-topbar">
+                  <div class="mini-title"></div>
+                  <div class="mini-btn"></div>
+                </div>
+                <div
+                  style="
+                    flex: 1;
+                    background: rgba(255, 255, 255, 0.02);
+                    border-radius: 5px;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    overflow: hidden;
+                  "
+                >
+                  <div class="mini-table-row" style="background: rgba(255, 255, 255, 0.04)">
+                    <div class="mini-col w3"></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w1"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      style="
+                        height: 6px;
+                        background: rgba(108, 99, 255, 0.5);
+                        border-radius: 2px;
+                        flex: 1;
+                      "
+                    ></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w1"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      style="
+                        height: 6px;
+                        background: rgba(52, 211, 153, 0.4);
+                        border-radius: 2px;
+                        flex: 1;
+                      "
+                    ></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w1"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      style="
+                        height: 6px;
+                        background: rgba(56, 189, 248, 0.4);
+                        border-radius: 2px;
+                        flex: 1;
+                      "
+                    ></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w1"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      style="
+                        height: 6px;
+                        background: rgba(245, 158, 11, 0.4);
+                        border-radius: 2px;
+                        flex: 1;
+                      "
+                    ></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w1"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      style="
+                        height: 6px;
+                        background: rgba(239, 68, 68, 0.4);
+                        border-radius: 2px;
+                        flex: 1;
+                      "
+                    ></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w1"></div>
+                  </div>
+                  <div class="mini-table-row">
+                    <div
+                      style="
+                        height: 6px;
+                        background: rgba(255, 255, 255, 0.15);
+                        border-radius: 2px;
+                        flex: 1;
+                      "
+                    ></div>
+                    <div class="mini-col w2"></div>
+                    <div class="mini-col w1"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-done">완료</span
+                ><span class="screen-badge sb-admin">ADMIN</span>
+              </div>
+              <div class="screen-name">카테고리 관리</div>
+              <div class="screen-path">/admin/categories</div>
+              <div class="screen-desc">
+                서비스 카탈로그의 카테고리 관리. display_order로 정렬 순서 제어. 서비스가 연결된
+                카테고리는 삭제 불가.
+              </div>
+              <div class="screen-features">
+                <div class="sf">테이블: 카테고리명 / display_order / 액션(수정·삭제)</div>
+                <div class="sf">추가/수정 인라인 모달</div>
+                <div class="sf">삭제 시 연결 서비스 있으면 안내 메시지</div>
+                <div class="sf">
+                  현재 카테고리: OTT / 스트리밍 / 생산성 / 클라우드 / 게임 / AI / 뉴스미디어 / 교육
+                  / 기타
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 도구 -->
+      <div class="screen-group" id="screen-ai">
+        <div class="screen-group-title">AI 도구 (예정)</div>
+        <div class="screen-group-sub">Pro 전용 AI 기능. 현재 메뉴는 존재하나 화면 미구현 상태.</div>
+        <div class="screen-cards">
+          <div class="screen-card">
+            <div
+              class="screen-preview medium"
+              style="display: flex; align-items: center; justify-content: center"
+            >
+              <div style="text-align: center; color: rgba(255, 255, 255, 0.15)">
+                <div style="font-size: 2rem; margin-bottom: 8px">🤖</div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 0.65rem;
+                    letter-spacing: 0.1em;
+                  "
+                >
+                  PLANNED
+                </div>
+              </div>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-planned">예정</span
+                ><span class="screen-badge sb-pro">Pro</span>
+              </div>
+              <div class="screen-name">AI 추천</div>
+              <div class="screen-path">/recommend</div>
+              <div class="screen-desc">
+                구독 목록 기반 Claude API 번들 최적화 추천. 절약 금액과 최적 조합을 자연어 리포트로
+                제공.
+              </div>
+              <div class="screen-features">
+                <div class="sf">pgvector RAG 기반 서비스 유사도 분석</div>
+                <div class="sf">통신사/네이버 번들 매핑 엔진</div>
+                <div class="sf">월 절약 가능 금액 계산 및 추천</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="screen-card">
+            <div
+              class="screen-preview medium"
+              style="display: flex; align-items: center; justify-content: center"
+            >
+              <div style="text-align: center; color: rgba(255, 255, 255, 0.15)">
+                <div style="font-size: 2rem; margin-bottom: 8px">🔔</div>
+                <div
+                  style="
+                    font-family: &quot;JetBrains Mono&quot;, monospace;
+                    font-size: 0.65rem;
+                    letter-spacing: 0.1em;
+                  "
+                >
+                  PLANNED
+                </div>
+              </div>
+            </div>
+            <div class="screen-info">
+              <div class="screen-badge-row">
+                <span class="screen-badge sb-planned">예정</span
+                ><span class="screen-badge sb-free">Free</span>
+              </div>
+              <div class="screen-name">알림 설정</div>
+              <div class="screen-path">/alert</div>
+              <div class="screen-desc">
+                이메일 알림 수신 여부 및 전체 알림 일정 관리. 구독별 커스텀 설정은 수정 모달에서
+                처리.
+              </div>
+              <div class="screen-features">
+                <div class="sf">전체 알림 on/off 토글</div>
+                <div class="sf">알림 이메일 주소 변경</div>
+                <div class="sf">알림 이력 조회</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- BUNDLE -->
+    <section id="bundle">
+      <div class="section-num">04 &mdash; Bundle Optimization</div>
+      <h2 class="section-title">번들 최적화 엔진</h2>
+      <p class="section-sub">
+        통신사 결합 상품과 네이버플러스 멤버십을 분석해 최적 조합을 AI가 추천합니다.
+      </p>
+      <div class="bundle-section">
+        <div class="provider-grid">
+          <div class="provider-card">
+            <span class="provider-emoji">📡</span>
+            <div class="provider-name">SKT</div>
+            <div class="provider-detail">T우주 · 0 청년 · T다이렉트 요금제 기반 번들 분석</div>
+          </div>
+          <div class="provider-card">
+            <span class="provider-emoji">📶</span>
+            <div class="provider-name">KT</div>
+            <div class="provider-detail">KT 리얼 100 · 시즌 · 밀리의서재 결합 혜택</div>
+          </div>
+          <div class="provider-card">
+            <span class="provider-emoji">📱</span>
+            <div class="provider-name">LGU+</div>
+            <div class="provider-detail">유독Pick · 유튜브+디즈니 번들 최적화 분석</div>
+          </div>
+          <div class="provider-card">
+            <span class="provider-emoji">🛒</span>
+            <div class="provider-name">네이버플러스</div>
+            <div class="provider-detail">멤버십 혜택 구독 포함 여부 · 쇼핑 적립 환산</div>
+          </div>
+        </div>
+        <div class="flow-diagram" style="gap: 8px; margin-top: 40px">
+          <div class="flow-step">
+            <div class="flow-step-num">01</div>
+            <div class="flow-step-title">구독 목록 수집</div>
+            <div class="flow-step-sub">등록된 서비스 + 금액</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num">02</div>
+            <div class="flow-step-title">벡터 검색</div>
+            <div class="flow-step-sub">pgvector 유사도 매칭</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num">03</div>
+            <div class="flow-step-title">번들 매핑</div>
+            <div class="flow-step-sub">통신사/네이버 상품 대응</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num">04</div>
+            <div class="flow-step-title">Claude 리포트</div>
+            <div class="flow-step-sub">자연어 추천 생성</div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-num">05</div>
+            <div class="flow-step-title">절약 금액 제시</div>
+            <div class="flow-step-sub">월 절감액 계산</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ROADMAP -->
+    <section id="roadmap">
+      <div class="section-num">05 &mdash; Roadmap</div>
+      <h2 class="section-title">개발 로드맵</h2>
+      <p class="section-sub">현재 진행 상황과 앞으로의 개발 계획입니다.</p>
+      <div class="roadmap">
+        <div class="roadmap-item done">
+          <div class="roadmap-phase">Phase 1 — 완료</div>
+          <div class="roadmap-title">인증 시스템 구축</div>
+          <div class="roadmap-desc">
+            JWT HttpOnly Cookie 기반 인증. Refresh Token Rotation. Redis 세션 관리. 비밀번호 재설정
+            (Resend API).
+          </div>
+          <div class="roadmap-tasks">
+            <span class="rtask">회원가입/로그인</span><span class="rtask">토큰 재발급</span
+            ><span class="rtask">비밀번호 재설정</span><span class="rtask">AuthProvider</span>
+          </div>
+        </div>
+        <div class="roadmap-item done">
+          <div class="roadmap-phase">Phase 2 — 완료</div>
+          <div class="roadmap-title">구독 CRUD 및 서비스 카탈로그</div>
+          <div class="roadmap-desc">
+            구독 등록/수정/삭제/상태관리. 서비스 카탈로그 (22개 서비스). 카테고리 분류 (OTT/AI/게임
+            등). billingDay 기반 갱신일 자동 계산.
+          </div>
+          <div class="roadmap-tasks">
+            <span class="rtask">구독 CRUD</span><span class="rtask">서비스 카탈로그</span
+            ><span class="rtask">카테고리 관리</span><span class="rtask">갱신일 자동 계산</span
+            ><span class="rtask">ServiceLogo 컴포넌트</span>
+          </div>
+        </div>
+        <div class="roadmap-item done">
+          <div class="roadmap-phase">Phase 3 — 완료</div>
+          <div class="roadmap-title">대시보드 및 UI 시스템</div>
+          <div class="roadmap-desc">
+            shadcn/ui 기반 컴포넌트 시스템. Sonner Toast + ApiError 공통 처리. 대시보드 (이번 주/달
+            지출 예정, 갱신 일정, 카테고리 분석). 어드민 관리 화면.
+          </div>
+          <div class="roadmap-tasks">
+            <span class="rtask">shadcn/ui 세팅</span><span class="rtask">Toast + 에러처리</span
+            ><span class="rtask">대시보드</span><span class="rtask">어드민 CRUD</span
+            ><span class="rtask">다크모드</span>
+          </div>
+        </div>
+        <div class="roadmap-item done">
+          <div class="roadmap-phase">Phase 4 — 완료</div>
+          <div class="roadmap-title">지출 분석 대시보드</div>
+          <div class="roadmap-desc">
+            /analytics 페이지 구현. 요약 카드 4개(총 누적·월 평균·전월 대비·연간 예상), 기간 탭(3개월/6개월/1년/전체),
+            Recharts 월별 막대 차트 및 카테고리 도넛 차트, 서비스별 지출 순위, 카테고리 가로 바 차트,
+            기간별 비교 패널. 청구 주기(MONTHLY/WEEKLY/YEARLY) 기반 프론트엔드 월별 집계.
+          </div>
+          <div class="roadmap-tasks">
+            <span class="rtask">지출 분석 페이지</span><span class="rtask">Recharts 차트</span
+            ><span class="rtask">카테고리 비중</span><span class="rtask">기간별 비교</span
+            ><span class="rtask">서비스 순위</span>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-phase">Phase 5 — 진행 중</div>
+          <div class="roadmap-title">갱신일 알림 시스템</div>
+          <div class="roadmap-desc">
+            갱신 D-N일 전 이메일 자동 발송. Spring @Scheduled 배치. 알림 설정 화면(/alert). 알림 이력 관리.
+          </div>
+          <div class="roadmap-tasks">
+            <span class="rtask">Spring Scheduler</span><span class="rtask">Resend API</span
+            ><span class="rtask">알림 설정 화면</span><span class="rtask">알림 이력</span>
+          </div>
+        </div>
+        <div class="roadmap-item future">
+          <div class="roadmap-phase">Phase 6 — 예정</div>
+          <div class="roadmap-title">AI 추천 엔진</div>
+          <div class="roadmap-desc">
+            pgvector + Claude API 기반 번들 최적화 추천. 대체 서비스 추천. 자연어 리포트 생성.
+          </div>
+          <div class="roadmap-tasks">
+            <span class="rtask">pgvector 임베딩</span><span class="rtask">Claude API 연동</span
+            ><span class="rtask">번들 매핑 엔진</span><span class="rtask">AI 추천 화면</span>
+          </div>
+        </div>
+        <div class="roadmap-item future">
+          <div class="roadmap-phase">Phase 7 — 예정</div>
+          <div class="roadmap-title">Freemium 전환 및 런칭</div>
+          <div class="roadmap-desc">
+            Pro 플랜 결제 연동. Free 5개 제한 적용. 번들 크롤러 배포. 서비스 정식 런칭.
+          </div>
+          <div class="roadmap-tasks">
+            <span class="rtask">결제 연동</span><span class="rtask">Pro 제한 로직</span
+            ><span class="rtask">크롤러 배포</span><span class="rtask">런칭</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- DATA -->
+    <section id="data">
+      <div class="section-num">06 &mdash; Data Architecture</div>
+      <h2 class="section-title">데이터 설계</h2>
+      <p class="section-sub">
+        현재 구현된 실제 DB 스키마입니다. 초기 설계 대비 변경된 항목을 표시합니다.
+      </p>
+      <div class="entity-grid">
+        <div class="entity-card">
+          <div class="entity-header">users</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">email</span><span class="ef-type">varchar UNIQUE</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">password_hash</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">name</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">phone_number</span><span class="ef-type">varchar nullable</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">role</span><span class="ef-type">enum USER/ADMIN</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">created_at</span><span class="ef-type">timestamp</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header updated">subscriptions (변경)</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-fk">user_id</span><span class="ef-type">uuid FK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-fk">category_id</span
+              ><span class="ef-type">uuid FK nullable</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">service_name</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">amount</span><span class="ef-type">decimal</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">currency</span><span class="ef-type">enum KRW/USD..</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">billing_cycle</span><span class="ef-type">enum</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-new">billing_day_of_month</span
+              ><span class="ef-type">smallint</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-new">billing_day_of_week</span
+              ><span class="ef-type">smallint</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-new">billing_date_of_year</span
+              ><span class="ef-type">varchar(4)</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">next_billing_date</span
+              ><span class="ef-type">date (자동계산)</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">status</span><span class="ef-type">enum ACTIVE/PAUSED..</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">notify_before</span><span class="ef-type">boolean</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">notify_days_before</span><span class="ef-type">smallint</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header new">subscription_services (신규)</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-fk">category_id</span><span class="ef-type">uuid FK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">name</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">logo_domain</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-new">website_url</span
+              ><span class="ef-type">varchar nullable</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">display_order</span><span class="ef-type">integer</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">is_active</span><span class="ef-type">boolean</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header new">service_categories (신규)</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">name</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">display_order</span><span class="ef-type">integer</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">created_at</span><span class="ef-type">timestamp</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header updated">subscription_categories (변경)</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">name</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">icon</span><span class="ef-type">varchar nullable</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">color</span><span class="ef-type">varchar nullable</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">is_default</span><span class="ef-type">boolean</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-new">display_order</span><span class="ef-type">integer</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header">notification_logs</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-fk">subscription_id</span><span class="ef-type">uuid FK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">type</span><span class="ef-type">enum</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">status</span><span class="ef-type">enum</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">sent_to</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">sent_at</span><span class="ef-type">timestamp</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header">bundle_products</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">provider</span><span class="ef-type">enum SKT/KT/LGU+..</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">bundle_name</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">monthly_price</span><span class="ef-type">decimal</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">included_services</span><span class="ef-type">jsonb</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">last_synced_at</span><span class="ef-type">timestamp</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header">service_embeddings</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">service_name</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">content</span><span class="ef-type">text</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">embedding</span><span class="ef-type">vector(1536)</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">category</span><span class="ef-type">varchar</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">updated_at</span><span class="ef-type">timestamp</span>
+            </div>
+          </div>
+        </div>
+        <div class="entity-card">
+          <div class="entity-header">bundle_recommendations</div>
+          <div class="entity-fields">
+            <div class="entity-field">
+              <span class="ef-name ef-pk">id</span><span class="ef-type">uuid PK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-fk">user_id</span><span class="ef-type">uuid FK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name ef-fk">bundle_id</span><span class="ef-type">uuid FK</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">current_cost</span><span class="ef-type">decimal</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">monthly_savings</span><span class="ef-type">decimal</span>
+            </div>
+            <div class="entity-field">
+              <span class="ef-name">ai_summary</span><span class="ef-type">text</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        style="
+          margin-top: 20px;
+          padding: 16px 20px;
+          background: rgba(52, 211, 153, 0.05);
+          border: 1px solid rgba(52, 211, 153, 0.15);
+          border-radius: 8px;
+          font-size: 0.8rem;
+          color: var(--muted);
+        "
+      >
+        <span
+          style="
+            color: var(--accent3);
+            font-family: &quot;JetBrains Mono&quot;, monospace;
+            font-size: 0.7rem;
+          "
+          >범례</span
+        >
+        &nbsp; <span style="color: var(--accent3)">초록 테두리</span> = 변경된 테이블 &nbsp;·&nbsp;
+        <span style="color: var(--warn)">노란 테두리</span> = 신규 추가 테이블 &nbsp;·&nbsp;
+        <span style="color: var(--accent3); font-family: &quot;JetBrains Mono&quot;, monospace"
+          >초록 필드명</span
+        >
+        = 신규 추가 컬럼
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- PRICING -->
+    <section id="pricing">
+      <div class="section-num">07 &mdash; Monetization</div>
+      <h2 class="section-title">수익화 모델</h2>
+      <p class="section-sub">Freemium 구조로 빠른 사용자 확보 후 Pro 전환율 극대화.</p>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-tier">Free Tier</div>
+          <div class="price-amount"><sup>₩</sup>0<sub>/월</sub></div>
+          <div class="price-desc">
+            구독 관리의 핵심 기능을 무료로 제공. 서비스 가치 체험 후 자연스러운 Pro 전환 유도.
+          </div>
+          <div class="price-feature">구독 등록 최대 5개</div>
+          <div class="price-feature">갱신일 이메일 알림</div>
+          <div class="price-feature">기본 지출 요약 대시보드</div>
+          <div class="price-feature muted">전체 지출 분석 리포트</div>
+          <div class="price-feature muted">AI 대체재 추천</div>
+          <div class="price-feature muted">번들 최적화 추천</div>
+          <div class="price-feature muted">AI 챗봇 어시스턴트</div>
+        </div>
+        <div class="price-card pro">
+          <div class="price-tier">Pro Tier</div>
+          <div class="price-amount"><sup>$</sup>5~9<sub>/월</sub></div>
+          <div class="price-desc">무제한 구독 등록과 AI 기반 최적화 기능 전체 이용 가능.</div>
+          <div class="price-feature">구독 등록 무제한</div>
+          <div class="price-feature">갱신일 이메일 알림</div>
+          <div class="price-feature">전체 지출 분석 리포트</div>
+          <div class="price-feature">AI 기반 대체재 추천</div>
+          <div class="price-feature">통신사/네이버 번들 최적화</div>
+          <div class="price-feature">AI 챗봇 어시스턴트</div>
+          <div class="price-feature">번들 변경 알림</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-left">Sub<span>Lens</span></div>
+      <div class="footer-meta">
+        Project Proposal v2.1<br />
+        업데이트: 2026-03-20<br />
+        기술 스택: Spring Boot · Next.js · PostgreSQL · Claude API<br />
+        <span style="color: var(--accent3)">지출 분석 페이지 완료 · Phase 4 완료 · Phase 5 분리</span>
+      </div>
+    </footer>
+
+    <script>
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.style.opacity = "1";
+              entry.target.style.transform = "none";
+            }
           });
-      </script>
-    </body>
-  </html>
-</T>
+        },
+        { threshold: 0.1 }
+      );
+      document
+        .querySelectorAll(
+          ".roadmap-item, .stack-card, .feature-block, .provider-card, .entity-card, .screen-card"
+        )
+        .forEach((el) => {
+          el.style.opacity = "0";
+          el.style.transform = "translateY(20px)";
+          el.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+          observer.observe(el);
+        });
+    </script>
+  </body>
+</html>
