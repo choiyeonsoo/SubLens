@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   useCategories,
@@ -28,11 +28,8 @@ interface FormState {
   currency: "KRW" | "USD" | "EUR" | "JPY" | "GBP";
   billingCycle: "WEEKLY" | "MONTHLY" | "YEARLY";
   startDate: string;
-  // MONTHLY
   billingDayOfMonth: string;
-  // WEEKLY
   billingDayOfWeek: string;
-  // YEARLY
   billingDateOfYearMonth: string;
   billingDateOfYearDay: string;
   notifyDaysBefore: string;
@@ -50,9 +47,7 @@ const NOTIFY_OPTIONS = [
   { value: "1", label: "1일 전" },
   { value: "3", label: "3일 전" },
   { value: "7", label: "7일 전" },
-  { value: "custom", label: "직접 입력" },
 ];
-const PRESET_NOTIFY = new Set(["0", "1", "3", "7"]);
 const WEEKDAY_OPTIONS = [
   { value: "1", label: "월요일" },
   { value: "2", label: "화요일" },
@@ -62,6 +57,7 @@ const WEEKDAY_OPTIONS = [
   { value: "6", label: "토요일" },
   { value: "7", label: "일요일" },
 ];
+const PRESET_NOTIFY = new Set(["0", "1", "3", "7"]);
 
 function today(): string {
   return new Date().toISOString().split("T")[0];
@@ -103,7 +99,7 @@ const DEFAULT_FORM: FormState = {
   customNotifyDaysInput: "",
 };
 
-export default function SubscriptionFormModal({ open, onClose, initial }: Props) {
+export default function SubscriptionSidePanel({ open, onClose, initial }: Props) {
   const isEdit = !!initial;
   const { data: categories = [] } = useCategories();
   const createMutation = useCreateSubscription();
@@ -112,8 +108,20 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
   // key prop으로 remount되므로 초기값을 props에서 직접 계산
   const [form, setForm] = useState<FormState>(() => initial ? toFormState(initial) : DEFAULT_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [visible, setVisible] = useState(false);
 
-  if (!open) return null;
+  // 애니메이션용 visible 처리만 useEffect에서 관리
+  useEffect(() => {
+    if (open) setVisible(true);
+  }, [open]);
+
+  // 닫힐 때 슬라이드 아웃 후 unmount
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => setVisible(false), 200);
+  };
+
+  if (!visible && !open) return null;
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
@@ -124,65 +132,47 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
 
   const validate = (): boolean => {
     const next: typeof errors = {};
-
-    if (!form.serviceName.trim()) {
-      next.serviceName = "서비스명을 입력해주세요.";
-    }
-
+    if (!form.serviceName.trim()) next.serviceName = "서비스명을 입력해주세요.";
     if (form.amount.trim() === "") {
       next.amount = "금액을 입력해주세요.";
     } else {
       const amount = Number(form.amount);
-      if (isNaN(amount) || amount < 0) {
-        next.amount = "금액은 0 이상이어야 합니다.";
-      }
+      if (isNaN(amount) || amount < 0) next.amount = "금액은 0 이상이어야 합니다.";
     }
-
     if (form.billingCycle === "MONTHLY") {
       const day = Number(form.billingDayOfMonth);
-      if (!form.billingDayOfMonth || !Number.isInteger(day) || day < 1 || day > 31) {
+      if (!form.billingDayOfMonth || !Number.isInteger(day) || day < 1 || day > 31)
         next.billingDayOfMonth = "1 ~ 31 사이의 날짜를 입력해주세요.";
-      }
     }
-
     if (form.billingCycle === "WEEKLY") {
-      if (!form.billingDayOfWeek) {
-        next.billingDayOfWeek = "요일을 선택해주세요.";
-      }
+      if (!form.billingDayOfWeek) next.billingDayOfWeek = "요일을 선택해주세요.";
     }
-
     if (form.billingCycle === "YEARLY") {
       const m = Number(form.billingDateOfYearMonth);
       const d = Number(form.billingDateOfYearDay);
-      if (!form.billingDateOfYearMonth || !Number.isInteger(m) || m < 1 || m > 12) {
+      if (!form.billingDateOfYearMonth || !Number.isInteger(m) || m < 1 || m > 12)
         next.billingDateOfYearMonth = "1 ~ 12 사이의 월을 입력해주세요.";
-      } else {
-        const maxDay = new Date(2000, m, 0).getDate(); // 해당 월의 마지막 날
-        if (!form.billingDateOfYearDay || !Number.isInteger(d) || d < 1 || d > maxDay) {
+      else {
+        const maxDay = new Date(2000, m, 0).getDate();
+        if (!form.billingDateOfYearDay || !Number.isInteger(d) || d < 1 || d > maxDay)
           next.billingDateOfYearDay = `1 ~ ${maxDay} 사이의 일을 입력해주세요.`;
-        }
       }
     }
-
     if (form.notifyDaysBefore === "custom") {
       const days = Number(form.customNotifyDaysInput);
-      if (!form.customNotifyDaysInput || !Number.isInteger(days) || days < 1 || days > 30) {
+      if (!form.customNotifyDaysInput || !Number.isInteger(days) || days < 1 || days > 30)
         next.customNotifyDaysInput = "1 ~ 30 사이의 값을 입력해주세요.";
-      }
     }
-
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
   const handleSubmit = () => {
     if (!validate()) return;
-
     const notifyDays =
       form.notifyDaysBefore === "custom"
         ? Number(form.customNotifyDaysInput)
         : Number(form.notifyDaysBefore);
-
     const billingDateOfYear =
       form.billingCycle === "YEARLY"
         ? String(form.billingDateOfYearMonth).padStart(2, "0") +
@@ -196,8 +186,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
       currency: form.currency,
       billingCycle: form.billingCycle,
       startDate: form.startDate || undefined,
-      billingDayOfMonth:
-        form.billingCycle === "MONTHLY" ? Number(form.billingDayOfMonth) : undefined,
+      billingDayOfMonth: form.billingCycle === "MONTHLY" ? Number(form.billingDayOfMonth) : undefined,
       billingDayOfWeek: form.billingCycle === "WEEKLY" ? Number(form.billingDayOfWeek) : undefined,
       billingDateOfYear,
       notifyBefore: notifyDays > 0,
@@ -205,34 +194,42 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
     };
 
     if (isEdit && initial) {
-      updateMutation.mutate({ ...payload, id: initial.id }, { onSuccess: onClose });
+      updateMutation.mutate({ ...payload, id: initial.id }, { onSuccess: handleClose });
     } else {
-      createMutation.mutate(payload, { onSuccess: onClose });
+      createMutation.mutate(payload, { onSuccess: handleClose });
     }
   };
 
   const inputClass = (field: keyof FormState) =>
     `w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors focus:ring-2 focus:ring-violet-500 dark:bg-gray-800 dark:text-white ${
-      errors[field] ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-gray-700"
+      errors[field]
+        ? "border-red-400 dark:border-red-500"
+        : "border-gray-200 dark:border-gray-700"
     }`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-900">
+    <>
+      {/* 사이드 패널 */}
+      <div
+        className={`fixed right-0 top-0 z-40 flex h-full w-full flex-col bg-white shadow-2xl transition-transform dark:bg-gray-900 sm:w-[400px] ${
+          open ? "translate-x-0 duration-300 ease-out" : "translate-x-full duration-200 ease-in"
+        }`}
+      >
         {/* 헤더 */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            {isEdit ? "구독 수정" : "구독 추가"}
+            {isEdit ? "구독 수정" : "새 구독 추가"}
           </h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* 폼 */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <div className="flex flex-col gap-4">
-            {/* 서비스명 */}
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          <div className="flex flex-col gap-5">
+
+            {/* 1. 서비스명 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 서비스명 <span className="text-red-400">*</span>
@@ -247,7 +244,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
               )}
             </div>
 
-            {/* 카테고리 */}
+            {/* 2. 카테고리 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 카테고리
@@ -263,7 +260,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
               />
             </div>
 
-            {/* 금액 + 통화 */}
+            {/* 3. 금액 + 통화 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 금액 <span className="text-red-400">*</span>
@@ -281,7 +278,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
                   <Select
                     value={form.currency}
                     onChange={(v) => set("currency", v as FormState["currency"])}
-                    placeholder="통화 선택"
+                    placeholder="통화"
                     options={CURRENCIES.map((c) => ({ value: c, label: c }))}
                   />
                 </div>
@@ -289,105 +286,92 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
               {errors.amount && <p className="mt-1 text-xs text-red-500">{errors.amount}</p>}
             </div>
 
-            {/* 결제 주기 */}
+            {/* 4. 결제 주기 + 결제일 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                결제 주기
+                결제 주기 <span className="text-red-400">*</span>
               </label>
-              <Select
-                value={form.billingCycle}
-                onChange={(v) => {
-                  set("billingCycle", v as FormState["billingCycle"]);
-                  // 주기 변경 시 기존 기준일 초기화
-                  setForm((prev) => ({
-                    ...prev,
-                    billingCycle: v as FormState["billingCycle"],
-                    billingDayOfMonth: "",
-                    billingDayOfWeek: "",
-                    billingDateOfYearMonth: "",
-                    billingDateOfYearDay: "",
-                  }));
-                  setErrors({});
-                }}
-                placeholder="결제 주기 선택"
-                options={BILLING_CYCLES.map(({ value, label }) => ({ value, label }))}
-              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select
+                    value={form.billingCycle}
+                    onChange={(v) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        billingCycle: v as FormState["billingCycle"],
+                        billingDayOfMonth: "",
+                        billingDayOfWeek: "",
+                        billingDateOfYearMonth: "",
+                        billingDateOfYearDay: "",
+                      }));
+                      setErrors({});
+                    }}
+                    placeholder="주기"
+                    options={BILLING_CYCLES.map(({ value, label }) => ({ value, label }))}
+                  />
+                </div>
+
+                {/* 월간: 날짜 */}
+                {form.billingCycle === "MONTHLY" && (
+                  <div className="w-28">
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      placeholder="일 (1~31)"
+                      value={form.billingDayOfMonth}
+                      onChange={(e) => set("billingDayOfMonth", e.target.value)}
+                      className={inputClass("billingDayOfMonth")}
+                    />
+                  </div>
+                )}
+
+                {/* 주간: 요일 */}
+                {form.billingCycle === "WEEKLY" && (
+                  <div className="w-28">
+                    <Select
+                      value={form.billingDayOfWeek}
+                      onChange={(v) => set("billingDayOfWeek", v)}
+                      placeholder="요일"
+                      options={WEEKDAY_OPTIONS}
+                    />
+                  </div>
+                )}
+
+                {/* 연간: MM / DD */}
+                {form.billingCycle === "YEARLY" && (
+                  <div className="flex w-36 items-center gap-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="12"
+                      placeholder="월"
+                      value={form.billingDateOfYearMonth}
+                      onChange={(e) => set("billingDateOfYearMonth", e.target.value)}
+                      className={`w-14 ${inputClass("billingDateOfYearMonth")}`}
+                    />
+                    <span className="text-xs text-gray-400">월</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      placeholder="일"
+                      value={form.billingDateOfYearDay}
+                      onChange={(e) => set("billingDateOfYearDay", e.target.value)}
+                      className={`w-14 ${inputClass("billingDateOfYearDay")}`}
+                    />
+                    <span className="text-xs text-gray-400">일</span>
+                  </div>
+                )}
+              </div>
+              {(errors.billingDayOfMonth || errors.billingDayOfWeek || errors.billingDateOfYearMonth || errors.billingDateOfYearDay) && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.billingDayOfMonth ?? errors.billingDayOfWeek ?? errors.billingDateOfYearMonth ?? errors.billingDateOfYearDay}
+                </p>
+              )}
             </div>
 
-            {/* 청구 기준일 — billingCycle에 따라 동적 렌더링 */}
-            {form.billingCycle === "MONTHLY" && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                  매달 몇 일? <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  placeholder="1 ~ 31"
-                  value={form.billingDayOfMonth}
-                  onChange={(e) => set("billingDayOfMonth", e.target.value)}
-                  className={inputClass("billingDayOfMonth")}
-                />
-                {errors.billingDayOfMonth && (
-                  <p className="mt-1 text-xs text-red-500">{errors.billingDayOfMonth}</p>
-                )}
-              </div>
-            )}
-
-            {form.billingCycle === "WEEKLY" && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                  무슨 요일? <span className="text-red-400">*</span>
-                </label>
-                <Select
-                  value={form.billingDayOfWeek}
-                  onChange={(v) => set("billingDayOfWeek", v)}
-                  placeholder="요일 선택"
-                  options={WEEKDAY_OPTIONS}
-                />
-                {errors.billingDayOfWeek && (
-                  <p className="mt-1 text-xs text-red-500">{errors.billingDayOfWeek}</p>
-                )}
-              </div>
-            )}
-
-            {form.billingCycle === "YEARLY" && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                  몇 월 며칠? <span className="text-red-400">*</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    placeholder="월 (1~12)"
-                    value={form.billingDateOfYearMonth}
-                    onChange={(e) => set("billingDateOfYearMonth", e.target.value)}
-                    className={`flex-1 ${inputClass("billingDateOfYearMonth")}`}
-                  />
-                  <span className="text-sm text-gray-400">월</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    placeholder="일 (1~31)"
-                    value={form.billingDateOfYearDay}
-                    onChange={(e) => set("billingDateOfYearDay", e.target.value)}
-                    className={`flex-1 ${inputClass("billingDateOfYearDay")}`}
-                  />
-                  <span className="text-sm text-gray-400">일</span>
-                </div>
-                {(errors.billingDateOfYearMonth || errors.billingDateOfYearDay) && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.billingDateOfYearMonth ?? errors.billingDateOfYearDay}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* 시작일 */}
+            {/* 5. 시작일 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 시작일
@@ -400,7 +384,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
               />
             </div>
 
-            {/* 갱신 알림 */}
+            {/* 6. 갱신 알림 */}
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 갱신 알림
@@ -411,7 +395,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
                   setForm((prev) => ({
                     ...prev,
                     notifyDaysBefore: v ?? "0",
-                    customNotifyDaysInput: v === "custom" ? prev.customNotifyDaysInput : "",
+                    customNotifyDaysInput: "",
                   }));
                   setErrors((prev) => ({
                     ...prev,
@@ -422,37 +406,21 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
                 placeholder="알림 설정"
                 options={NOTIFY_OPTIONS.map(({ value, label }) => ({ value, label }))}
               />
-              {form.notifyDaysBefore === "custom" && (
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="30"
-                    placeholder="며칠 전?"
-                    value={form.customNotifyDaysInput}
-                    onChange={(e) => set("customNotifyDaysInput", e.target.value)}
-                    className={`flex-1 ${inputClass("customNotifyDaysInput")}`}
-                  />
-                  <span className="text-sm text-gray-400">일 전</span>
-                </div>
-              )}
-              {errors.customNotifyDaysInput && (
-                <p className="mt-1 text-xs text-red-500">{errors.customNotifyDaysInput}</p>
-              )}
             </div>
+
           </div>
         </div>
 
-        {/* 푸터 */}
-        <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-4 dark:border-gray-800">
-          <Button variant="ghost" onClick={onClose}>
+        {/* 하단 버튼 */}
+        <div className="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-5 py-4 dark:border-gray-800">
+          <Button variant="ghost" onClick={handleClose}>
             취소
           </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={isPending}>
-            {isPending ? "저장 중..." : isEdit ? "수정" : "추가"}
+            {isPending ? "저장 중..." : isEdit ? "수정" : "추가하기"}
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

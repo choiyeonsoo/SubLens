@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.sublens.backend.auth.dto.LoginRequest;
 import com.sublens.backend.auth.dto.LoginResponse;
 import com.sublens.backend.auth.dto.SignupRequest;
+import com.sublens.backend.auth.dto.UserResponse;
 import com.sublens.backend.auth.jwt.JwtTokenProvider;
 import com.sublens.backend.global.exception.BusinessException;
 import com.sublens.backend.global.exception.ErrorCode;
@@ -136,6 +137,16 @@ public class AuthService {
                 "reset:token:" + newToken, userId, 10, TimeUnit.MINUTES);
 
         emailService.sendPasswordReset(user.getEmail(), user.getName(), newToken);
+    }
+
+    public UserResponse getMe(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        return new UserResponse(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getName(),
+                user.getRole().name());
     }
 
     public void resetPassword(String token, String password) {

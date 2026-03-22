@@ -32,7 +32,22 @@
       "Bash(xargs cat:*)",
       "Bash(ls -la /d/sublens/frontend/app/\\\\\\(app\\\\\\)/)",
       "Bash(find d:/sublens -name *.html -o -name *.md)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Read(//c/Users/최채주/.claude/**)",
+      "Bash(psql --version)",
+      "Bash(npm list:*)",
+      "Bash(cd /tmp)",
+      "Bash(node -e \":*)",
+      "Bash(find /d/subLens/backend/src -name *.sql -o -name *data* -o -name *seed* -o -name *init*)",
+      "Bash(find /d/subLens -name *.sql -o -name *.json -o -name *.csv)",
+      "Bash(node seed.js)",
+      "Bash(node \"C:/Users/최채주/AppData/Local/Temp/seed.js\")",
+      "Bash(grep -r \"subscription_categor\\\\|SubscriptionCategory\\\\|is_default\\\\|isDefault\\\\|카테고리\" /d/subLens/frontend --include=*.ts --include=*.tsx -l)",
+      "Bash(node check-logos.js)",
+      "Bash(node fix-logos.js)",
+      "Bash(find /d/subLens/frontend/features/subscription -type f ! -path */node_modules/*)",
+      "Bash(xargs -I {} find {} -type d)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

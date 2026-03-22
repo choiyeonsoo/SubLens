@@ -16,15 +16,19 @@ public class LogoDomainValidator {
 
     private static final int PLACEHOLDER_CONTENT_LENGTH = 726;
 
+    // 리다이렉트를 따라가도록 NORMAL 설정
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
+            .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
     /**
      * Google Favicon API로 logoDomain의 유효성을 검증합니다.
-     * Content-Length가 726이면 빈 placeholder이므로 null을 반환합니다.
-     * 정상 이미지면 원본 logoDomain을 반환합니다.
-     * 네트워크 오류 시 logoDomain을 그대로 반환합니다.
+     * 리다이렉트를 따라간 최종 응답 기준으로 판단합니다.
+     * - 상태코드가 200이 아니면 null 반환
+     * - Content-Length가 726(placeholder)이면 null 반환
+     * - 정상 이미지면 원본 logoDomain을 반환합니다.
+     * - 네트워크 오류 시 logoDomain을 그대로 반환합니다.
      */
     public String resolve(String logoDomain) {
         if (logoDomain == null || logoDomain.isBlank()) {
@@ -40,6 +44,11 @@ public class LogoDomainValidator {
 
             HttpResponse<Void> response = HTTP_CLIENT.send(
                     request, HttpResponse.BodyHandlers.discarding());
+
+            if (response.statusCode() != 200) {
+                log.debug("Logo domain '{}' returned status {}, storing as null", logoDomain, response.statusCode());
+                return null;
+            }
 
             long contentLength = response.headers()
                     .firstValueAsLong("content-length")

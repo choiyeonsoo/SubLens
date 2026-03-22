@@ -1,7 +1,78 @@
+# ──────────────────────────────────────────
 # IDE / Editor
+# ──────────────────────────────────────────
 .vscode/
 .idea/
+*.iml
+*.iws
+*.ipr
 
-# Claude Code local settings
+# ──────────────────────────────────────────
+# Claude Code
+# ──────────────────────────────────────────
 .claude/settings.local.json
 .claude/settings.json
+
+# ──────────────────────────────────────────
+# Environment / Secrets
+# ──────────────────────────────────────────
+.env
+.env.*
+!.env.example
+frontend/.env.local
+frontend/.env.*.local
+
+# ──────────────────────────────────────────
+# OS
+# ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ──────────────────────────────────────────
+# Backend (Spring Boot / Gradle)
+# ──────────────────────────────────────────
+backend/build/
+backend/.gradle/
+backend/out/
+backend/*.jar
+backend/*.war
+backend/bin/
+backend/.springBoot/
+backend/HELP.md
+
+# ──────────────────────────────────────────
+# Frontend (Next.js / Node)
+# ──────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.cache/
+frontend/dist/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.npm
+frontend/.pnp
+frontend/.pnp.js
+
+# ──────────────────────────────────────────
+# Docker
+# ──────────────────────────────────────────
+docker-compose.override.yml
+
+# ──────────────────────────────────────────
+# Temp / Seed scripts (프로젝트 루트)
+# ──────────────────────────────────────────
+seed.js
+fix-logos.js
+check-logos.js
+node_modules/
+package-lock.json
+package.json
+
+# ──────────────────────────────────────────
+# Logs
+# ──────────────────────────────────────────
+*.log
+logs/

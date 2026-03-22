@@ -5,7 +5,8 @@ import { Plus, Search } from "lucide-react";
 import { useSubscriptions } from "@/features/subscription/hooks";
 import type { SubscriptionListRequest, SubscriptionResponse } from "@/features/subscription/types";
 import SubscriptionCard from "./SubscriptionCard";
-import SubscriptionFormModal from "./SubscriptionFormModal";
+// import SubscriptionFormModal from "./SubscriptionFormModal"; // 모달 → 사이드 패널로 교체
+import SubscriptionSidePanel from "./SubscriptionSidePanel";
 import Select from "@/components/ui/Select";
 
 type StatusFilter = "ALL" | "ACTIVE" | "PAUSED" | "CANCELLED";
@@ -170,8 +171,16 @@ export default function SubscriptionListPage() {
         </div>
       )}
 
-      {/* 등록/수정 모달 */}
-      <SubscriptionFormModal open={modalOpen} onClose={closeModal} initial={editTarget} />
+      {/* 등록/수정 모달 (주석 처리 — 사이드 패널로 교체) */}
+      {/* <SubscriptionFormModal open={modalOpen} onClose={closeModal} initial={editTarget} /> */}
+
+      {/* 사이드 패널 */}
+      <SubscriptionSidePanel
+        key={`${modalOpen}-${editTarget?.id ?? "new"}`}
+        open={modalOpen}
+        onClose={closeModal}
+        initial={editTarget}
+      />
     </div>
   );
 }

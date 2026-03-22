@@ -1,6 +1,5 @@
 package com.sublens.backend.auth.controller;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -23,10 +22,6 @@ import com.sublens.backend.auth.dto.UserResponse;
 import com.sublens.backend.auth.jwt.JwtTokenProvider;
 import com.sublens.backend.auth.service.AuthService;
 import com.sublens.backend.global.exception.ApiResponse;
-import com.sublens.backend.global.exception.BusinessException;
-import com.sublens.backend.global.exception.ErrorCode;
-import com.sublens.backend.user.User;
-import com.sublens.backend.user.repository.UserRepository;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +35,6 @@ public class AuthController {
     private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
-    private final UserRepository userRepository;
 
     @PostMapping("/signup")
     public String signup(@RequestBody SignupRequest request) {
@@ -67,18 +61,8 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
 
-        // authentication.getName() = userId (JwtAuthenticationFilter에서 세팅한 값)
-        User user = userRepository.findById(UUID.fromString(authentication.getName()))
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-        return ResponseEntity.ok(
-                ApiResponse.success(new UserResponse(
-                        user.getId().toString(),
-                        user.getEmail(),
-                        user.getName(),
-                        user.getRole().name()  // "FREE" or "PRO"
-                ))
-        );
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success(authService.getMe(userId)));
     }
 
     @PostMapping("/logout")
