@@ -4,32 +4,11 @@ import { useMemo } from "react";
 import { useSubscriptions, useSubscriptionServices } from "@/features/subscription/hooks";
 import type { SubscriptionResponse, SubscriptionServiceItem } from "@/features/subscription/types";
 import ServiceLogo from "@/components/ServiceLogo";
+import { Skeleton } from "@/components/ui/Skeleton";
+import PageHeader from "@/components/PageHeader";
+import { formatAmount, toMonthlyAmount } from "@/lib/formatters";
 
 // ── Helpers ───────────────────────────────────────────────────────
-
-
-function toMonthlyAmount(amount: number, cycle: string): number {
-  if (cycle === "YEARLY") return amount / 12;
-  if (cycle === "WEEKLY") return amount * (52 / 12);
-  return amount;
-}
-
-const CURRENCY_LOCALE: Record<string, { locale: string; currency: string }> = {
-  KRW: { locale: "ko-KR", currency: "KRW" },
-  USD: { locale: "en-US", currency: "USD" },
-  EUR: { locale: "de-DE", currency: "EUR" },
-  JPY: { locale: "ja-JP", currency: "JPY" },
-  GBP: { locale: "en-GB", currency: "GBP" },
-};
-
-function formatAmount(amount: number, currency: string): string {
-  const config = CURRENCY_LOCALE[currency] ?? { locale: "ko-KR", currency };
-  return new Intl.NumberFormat(config.locale, {
-    style: "currency",
-    currency: config.currency,
-    maximumFractionDigits: currency === "KRW" || currency === "JPY" ? 0 : 2,
-  }).format(amount);
-}
 
 function getDday(dateStr: string): number {
   const today = new Date();
@@ -45,11 +24,6 @@ function formatMonthDay(dateStr: string): string {
 }
 
 // ── Sub-components ────────────────────────────────────────────────
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800 ${className}`} />;
-}
-
 
 function DDayBadge({ dday }: { dday: number }) {
   const label = dday === 0 ? "D-day" : dday > 0 ? `D-${dday}` : `D+${Math.abs(dday)}`;
@@ -320,6 +294,9 @@ export default function DashBoard() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-7xl space-y-6 p-6">
+        {/* ── 페이지 헤더 ── */}
+        <PageHeader title="대시보드" description="구독 현황과 지출 요약을 한눈에 확인하세요" />
+
         {/* ── Section 1: Summary Cards ── */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <SummaryCard

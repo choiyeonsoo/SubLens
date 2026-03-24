@@ -209,6 +209,14 @@ export default function SubscriptionSidePanel({ open, onClose, initial }: Props)
 
   return (
     <>
+      {/* 딤 오버레이 — 클릭 시 닫기 */}
+      <div
+        className={`fixed inset-0 z-30 bg-black/30 transition-opacity ${
+          open ? "opacity-100 duration-300" : "pointer-events-none opacity-0 duration-200"
+        }`}
+        onClick={handleClose}
+      />
+
       {/* 사이드 패널 */}
       <div
         className={`fixed right-0 top-0 z-40 flex h-full w-full flex-col bg-white shadow-2xl transition-transform dark:bg-gray-900 sm:w-[400px] ${

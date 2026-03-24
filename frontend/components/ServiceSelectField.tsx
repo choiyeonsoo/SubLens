@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { ExternalLink } from "lucide-react";
 import { useSubscriptionServices } from "@/features/subscription/hooks";
 import type { SubscriptionServiceItem } from "@/features/subscription/types";
@@ -40,13 +41,7 @@ export default function ServiceSelectField({ value, onChange, error }: Props) {
     else setQuery("");
   }, [open]);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  useClickOutside(containerRef, () => setOpen(false));
 
   // 검색 필터링
   const filtered = useMemo(() => {

@@ -22,6 +22,8 @@ import com.sublens.backend.auth.dto.UserResponse;
 import com.sublens.backend.auth.jwt.JwtTokenProvider;
 import com.sublens.backend.auth.service.AuthService;
 import com.sublens.backend.global.exception.ApiResponse;
+import com.sublens.backend.global.exception.BusinessException;
+import com.sublens.backend.global.exception.ErrorCode;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

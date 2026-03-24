@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSignup } from "@/features/auth/hooks";
 import { Layers } from "lucide-react";
+import AuthInput from "@/components/ui/AuthInput";
 
 export default function SignupView() {
   const router = useRouter();
@@ -31,9 +32,6 @@ export default function SignupView() {
     );
   };
 
-  const inputClass =
-    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition-colors focus:ring-2 focus:ring-violet-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500";
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10 dark:bg-gray-950">
       <div className="w-full max-w-sm">
@@ -56,28 +54,27 @@ export default function SignupView() {
           <h1 className="mb-6 text-lg font-semibold text-gray-900 dark:text-white">회원가입</h1>
 
           <div className="flex flex-col gap-3">
-            <input
+            <AuthInput
               type="email"
               placeholder="이메일"
-              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
             <div className="flex flex-col gap-1">
-              <input
+              <AuthInput
                 type="password"
                 placeholder="비밀번호"
-                className={`${inputClass} ${passwordError ? "border-red-400 dark:border-red-500" : ""}`}
+                className={passwordError ? "border-red-400 dark:border-red-500" : ""}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <input
+              <AuthInput
                 ref={confirmPasswordRef}
                 type="password"
                 placeholder="비밀번호 확인"
-                className={`${inputClass} ${passwordError ? "border-red-400 dark:border-red-500" : ""}`}
+                className={passwordError ? "border-red-400 dark:border-red-500" : ""}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -86,18 +83,16 @@ export default function SignupView() {
                 <p className="text-xs text-red-500">{passwordError}</p>
               )}
             </div>
-            <input
+            <AuthInput
               type="text"
               placeholder="이름"
-              className={inputClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
-            <input
+            <AuthInput
               type="text"
               placeholder="전화번호"
-              className={inputClass}
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               required

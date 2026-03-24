@@ -5,6 +5,7 @@ import { useLogin } from "@/features/auth/hooks";
 import Link from "next/link";
 import { Layers } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import AuthInput from "@/components/ui/AuthInput";
 
 export default function LoginView() {
   const { user, isLoading } = useAuthStore();
@@ -28,9 +29,6 @@ export default function LoginView() {
     );
   };
 
-  const inputClass =
-    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition-colors focus:ring-2 focus:ring-violet-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500";
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
       <div className="w-full max-w-sm">
@@ -53,18 +51,16 @@ export default function LoginView() {
           <h1 className="mb-6 text-lg font-semibold text-gray-900 dark:text-white">로그인</h1>
 
           <div className="flex flex-col gap-3">
-            <input
+            <AuthInput
               type="email"
               placeholder="이메일"
-              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <input
+            <AuthInput
               type="password"
               placeholder="비밀번호"
-              className={inputClass}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

@@ -11,16 +11,15 @@ import {
   Layers,
   User,
   LogOut,
-  Sun,
-  Moon,
   BookOpen,
   ChevronUp,
   Tags,
   AppWindow,
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import api from "@/lib/axios";
 
 const NAV_MENU = [
@@ -38,22 +37,10 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, setUser } = useAuthStore();
-  const { resolvedTheme, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
+  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   const handleLogout = async () => {
     await api.post("/api/auth/logout").catch(() => {});
@@ -73,12 +60,12 @@ export default function Sidebar() {
   return (
     <aside className="flex w-[200px] shrink-0 flex-col border-r border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
       {/* 로고 */}
-      <div className="flex items-center gap-2 px-4 py-5">
+      <Link href="/dashboard" className="flex items-center gap-2 px-4 py-5">
         <Layers className="h-5 w-5 text-violet-600" />
         <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white">
           SubLens
         </span>
-      </div>
+      </Link>
 
       {/* 네비게이션 */}
       <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-2">
@@ -149,19 +136,7 @@ export default function Sidebar() {
         {menuOpen && (
           <div className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
             {/* 테마 전환 */}
-            {mounted && (
-              <button
-                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                {resolvedTheme === "dark" ? (
-                  <Sun className="h-4 w-4 shrink-0" />
-                ) : (
-                  <Moon className="h-4 w-4 shrink-0" />
-                )}
-                {resolvedTheme === "dark" ? "라이트 모드" : "다크 모드"}
-              </button>
-            )}
+            <ThemeToggle variant="menu" />
 
             {/* Docs — ADMIN 전용 */}
             {user?.role === "ADMIN" && (

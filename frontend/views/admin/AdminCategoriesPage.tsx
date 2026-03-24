@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import {
@@ -61,18 +62,16 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">카테고리 관리</h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            서비스 카테고리를 추가·수정·삭제합니다.
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          카테고리 추가
-        </Button>
-      </div>
+      <PageHeader
+        title="카테고리 관리"
+        description="서비스 카테고리를 추가·수정·삭제합니다."
+        action={
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            카테고리 추가
+          </Button>
+        }
+      />
 
       {/* 테이블 */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">

@@ -2,7 +2,9 @@
 
 import { Pencil, Pause, Play, Trash2, MoreVertical, ExternalLink } from "lucide-react";
 import ServiceLogo from "@/components/ServiceLogo";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
+import { formatAmount } from "@/lib/formatters";
 import { toast } from "sonner";
 import type { SubscriptionResponse } from "@/features/subscription/types";
 import {
@@ -37,22 +39,6 @@ const BILLING_CYCLE_LABEL: Record<string, string> = {
   WEEKLY: "주",
 };
 
-const CURRENCY_LOCALE: Record<string, { locale: string; currency: string }> = {
-  KRW: { locale: "ko-KR", currency: "KRW" },
-  USD: { locale: "en-US", currency: "USD" },
-  EUR: { locale: "de-DE", currency: "EUR" },
-  JPY: { locale: "ja-JP", currency: "JPY" },
-  GBP: { locale: "en-GB", currency: "GBP" },
-};
-
-function formatAmount(amount: number, currency: string): string {
-  const config = CURRENCY_LOCALE[currency] ?? { locale: "ko-KR", currency };
-  return new Intl.NumberFormat(config.locale, {
-    style: "currency",
-    currency: config.currency,
-    maximumFractionDigits: currency === "KRW" || currency === "JPY" ? 0 : 2,
-  }).format(amount);
-}
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
@@ -95,15 +81,7 @@ export default function SubscriptionCard({ subscription, onEdit }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
+  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   const handleDelete = () => {
     setMenuOpen(false);
