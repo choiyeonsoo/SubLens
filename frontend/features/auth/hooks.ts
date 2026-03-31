@@ -15,12 +15,14 @@ export const useSignup = () => {
       password,
       name,
       phoneNumber,
+      mobileCarrier,
     }: {
       email: string;
       password: string;
       name: string;
       phoneNumber: string;
-    }) => signup(email, password, name, phoneNumber),
+      mobileCarrier: string;
+    }) => signup(email, password, name, phoneNumber, mobileCarrier),
   });
 };
 

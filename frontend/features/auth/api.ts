@@ -15,13 +15,15 @@ export const signup = async (
   email: string,
   password: string,
   name: string,
-  phoneNumber: string
+  phoneNumber: string,
+  mobileCarrier: string
 ) => {
   const response = await api.post("/api/auth/signup", {
     email,
     password,
     name,
     phoneNumber,
+    mobileCarrier,
   });
   return response.data;
 };

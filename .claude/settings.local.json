@@ -48,6 +48,7 @@
       "Bash(find /d/subLens/frontend/features/subscription -type f ! -path */node_modules/*)",
       "Bash(xargs -I {} find {} -type d)",
       "Bash(grep -v \"^$\")"
-    ]
+    ],
+    "additionalDirectories": ["d:\\sublens\\frontend\\.git"]
   }
 }

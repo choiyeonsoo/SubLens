@@ -45,6 +45,9 @@ public class User {
     @Column(nullable = true)
     private String phoneNumber;
 
+    @Column(name = "mobile_carrier", nullable = false)
+    private String mobileCarrier;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 

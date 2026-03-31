@@ -41,6 +41,7 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
                 .phoneNumber(request.getPhoneNumber())
+                .mobileCarrier(request.getMobileCarrier())
                 .role(Role.USER)
                 .build();
 
