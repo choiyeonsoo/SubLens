@@ -16,7 +16,6 @@ export default function LoginView() {
   if (isLoading || user) return null;
 
   const handleLogin = (e: { preventDefault(): void }) => {
-    console.log("login");
     e.preventDefault();
     mutate(
       { email, password },
