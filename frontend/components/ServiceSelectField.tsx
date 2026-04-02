@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { ExternalLink } from "lucide-react";
 import { useSubscriptionServices } from "@/features/subscription/hooks";
 import type { SubscriptionServiceItem } from "@/features/subscription/types";
+import ServiceLogo from "@/components/ServiceLogo";
 
 interface Props {
   value: string;
@@ -39,13 +41,7 @@ export default function ServiceSelectField({ value, onChange, error }: Props) {
     else setQuery("");
   }, [open]);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  useClickOutside(containerRef, () => setOpen(false));
 
   // 검색 필터링
   const filtered = useMemo(() => {
@@ -92,16 +88,11 @@ export default function ServiceSelectField({ value, onChange, error }: Props) {
         className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm outline-none transition-colors focus:ring-2 focus:ring-violet-500 dark:bg-gray-800 dark:text-white ${borderClass}`}
       >
         <div className="flex items-center gap-2">
-          {selected?.logoUrl && (
-            <img
-              src={selected.logoUrl}
-              alt={selected.name}
-              className="h-5 w-5 shrink-0 rounded object-contain"
-              onError={(e) => (e.currentTarget.style.display = "none")}
-            />
+          {selected && (
+            <ServiceLogo name={selected.name} logoDomain={selected.logoDomain} size={20} />
           )}
           <span
-            className={selected || isDirect ? "text-gray-900 dark:text-white" : "text-gray-400"}
+            className={selected || isDirect ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"}
           >
             {isLoading ? "불러오는 중..." : triggerLabel}
           </span>
@@ -147,7 +138,7 @@ export default function ServiceSelectField({ value, onChange, error }: Props) {
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                 >
                   ✕
                 </button>
@@ -194,12 +185,7 @@ export default function ServiceSelectField({ value, onChange, error }: Props) {
                           : "text-gray-700 dark:text-gray-300"
                       }`}
                     >
-                      <img
-                        src={item.logoUrl}
-                        alt={item.name}
-                        className="h-5 w-5 shrink-0 rounded object-contain"
-                        onError={(e) => (e.currentTarget.style.display = "none")}
-                      />
+                      <ServiceLogo name={item.name} logoDomain={item.logoDomain} size={20} />
                       {query ? <HighlightText text={item.name} query={query} /> : item.name}
                       {selected?.id === item.id && (
                         <span className="ml-auto text-violet-500">✓</span>

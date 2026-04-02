@@ -22,6 +22,7 @@ public class SubscriptionResponse {
     private UUID userId;
     private CategoryResponse category;
     private String serviceName;
+    private UUID serviceId;
     private String description;
     private BigDecimal amount;
     private Currency currency;
@@ -43,6 +44,7 @@ public class SubscriptionResponse {
                 s.getUserId(),
                 s.getCategory() != null ? CategoryResponse.from(s.getCategory()) : null,
                 s.getServiceName(),
+                s.getServiceId(),
                 s.getDescription(),
                 s.getAmount(),
                 s.getCurrency(),

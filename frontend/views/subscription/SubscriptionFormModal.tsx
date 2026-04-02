@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import {
   useCategories,
@@ -109,15 +109,9 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
   const createMutation = useCreateSubscription();
   const updateMutation = useUpdateSubscription();
 
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  // key prop으로 remount되므로 초기값을 props에서 직접 계산
+  const [form, setForm] = useState<FormState>(() => initial ? toFormState(initial) : DEFAULT_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
-
-  useEffect(() => {
-    if (open) {
-      setForm(initial ? toFormState(initial) : DEFAULT_FORM);
-      setErrors({});
-    }
-  }, [open, initial]);
 
   if (!open) return null;
 
@@ -454,7 +448,7 @@ export default function SubscriptionFormModal({ open, onClose, initial }: Props)
           <Button variant="ghost" onClick={onClose}>
             취소
           </Button>
-          <Button variant="default" onClick={handleSubmit} disabled={isPending}>
+          <Button variant="primary" onClick={handleSubmit} disabled={isPending}>
             {isPending ? "저장 중..." : isEdit ? "수정" : "추가"}
           </Button>
         </div>

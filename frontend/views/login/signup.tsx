@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSignup } from "@/features/auth/hooks";
 import { Layers } from "lucide-react";
+import AuthInput from "@/components/ui/AuthInput";
+import Select from "@/components/ui/Select";
 
 export default function SignupView() {
   const router = useRouter();
@@ -12,6 +14,7 @@ export default function SignupView() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [mobileCarrier, setMobileCarrier] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
@@ -26,13 +29,10 @@ export default function SignupView() {
     }
     setPasswordError("");
     mutate(
-      { email, password, name, phoneNumber },
+      { email, password, name, phoneNumber, mobileCarrier },
       { onSuccess: () => router.push("/login") }
     );
   };
-
-  const inputClass =
-    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition-colors focus:ring-2 focus:ring-violet-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10 dark:bg-gray-950">
@@ -56,57 +56,67 @@ export default function SignupView() {
           <h1 className="mb-6 text-lg font-semibold text-gray-900 dark:text-white">회원가입</h1>
 
           <div className="flex flex-col gap-3">
-            <input
+            <AuthInput
               type="email"
               placeholder="이메일"
-              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <div className="flex flex-col gap-1">
-              <input
-                type="password"
-                placeholder="비밀번호"
-                className={`${inputClass} ${passwordError ? "border-red-400 dark:border-red-500" : ""}`}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <input
-                ref={confirmPasswordRef}
-                type="password"
-                placeholder="비밀번호 확인"
-                className={`${inputClass} ${passwordError ? "border-red-400 dark:border-red-500" : ""}`}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              {passwordError && (
-                <p className="text-xs text-red-500">{passwordError}</p>
-              )}
-            </div>
-            <input
+            <AuthInput
+              type="password"
+              placeholder="비밀번호"
+              className={passwordError ? "border-red-400 dark:border-red-500" : ""}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <AuthInput
+              ref={confirmPasswordRef}
+              type="password"
+              placeholder="비밀번호 확인"
+              className={passwordError ? "border-red-400 dark:border-red-500" : ""}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
+            <AuthInput
               type="text"
               placeholder="이름"
-              className={inputClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
-            <input
-              type="text"
-              placeholder="전화번호"
-              className={inputClass}
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              required
-            />
+            <div className="flex gap-2">
+              <div className="w-2/5">
+                <Select
+                  value={mobileCarrier}
+                  onChange={setMobileCarrier}
+                  placeholder="통신사"
+                  options={[
+                    { value: "SKT", label: "SKT" },
+                    { value: "KT", label: "KT" },
+                    { value: "LG U+", label: "LG U+" },
+                    { value: "SKT 알뜰폰", label: "SKT 알뜰폰" },
+                    { value: "KT 알뜰폰", label: "KT 알뜰폰" },
+                    { value: "LG U+ 알뜰폰", label: "LG U+ 알뜰폰" },
+                  ]}
+                />
+              </div>
+              <div className="flex-1">
+                <AuthInput
+                  type="text"
+                  placeholder="전화번호"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
           </div>
 
-          {isError && (
-            <p className="mt-3 text-sm text-red-500">회원가입에 실패했습니다.</p>
-          )}
+          {isError && <p className="mt-3 text-sm text-red-500">회원가입에 실패했습니다.</p>}
 
           <button
             type="submit"

@@ -1,22 +1,22 @@
 "use client";
 
-import api from "@/lib/axios";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
+import LandingPage from "@/views/landing/LandingPage";
 
 export default function Home() {
   const router = useRouter();
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await api.get("/api/auth/me");
-        router.replace("/dashboard");
-      } catch {
-        router.replace("/login");
-      }
-    };
+  const { user, isLoading } = useAuthStore();
 
-    checkAuth();
-  }, [router]);
-  return <div className="p-10">로딩 중...</div>;
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading) return null;
+  if (user) return null; // redirecting to dashboard
+
+  return <LandingPage />;
 }

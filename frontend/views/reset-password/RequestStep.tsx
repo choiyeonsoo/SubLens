@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { useRequestPasswordReset } from "@/features/auth/hooks";
-
-const inputClass =
-  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition-colors focus:ring-2 focus:ring-violet-500 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500";
+import AuthInput from "@/components/ui/AuthInput";
 
 export default function RequestStep({ onNext }: { onNext: () => void }) {
   const [email, setEmail] = useState("");
@@ -27,10 +25,9 @@ export default function RequestStep({ onNext }: { onNext: () => void }) {
         가입한 이메일로 재설정 링크를 보내드립니다.
       </p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
+        <AuthInput
           type="email"
           placeholder="이메일"
-          className={inputClass}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required

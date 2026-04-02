@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sublens}
-    username: ${SPRING_DATASOURCE_USERNAME:sublens}
-    password: ${SPRING_DATASOURCE_PASSWORD:sublens0223}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.ysrtuoccvlsdiwkdwwsz}
+    password: ${SPRING_DATASOURCE_PASSWORD:Sublens0223}
     driver-class-name: org.postgresql.Driver
 
   jpa:

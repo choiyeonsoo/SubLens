@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Search } from "lucide-react";
 import { useSubscriptions } from "@/features/subscription/hooks";
 import type { SubscriptionListRequest, SubscriptionResponse } from "@/features/subscription/types";
 import SubscriptionCard from "./SubscriptionCard";
-import SubscriptionFormModal from "./SubscriptionFormModal";
+import SubscriptionSidePanel from "./SubscriptionSidePanel";
 import Select from "@/components/ui/Select";
+import { Skeleton } from "@/components/ui/Skeleton";
+import PageHeader from "@/components/PageHeader";
 
 type StatusFilter = "ALL" | "ACTIVE" | "PAUSED" | "CANCELLED";
 type SortOption = SubscriptionListRequest["sort"];
@@ -24,32 +27,24 @@ const SORT_OPTIONS: { value: NonNullable<SortOption>; label: string }[] = [
   { value: "amount", label: "금액 높은순" },
 ];
 
-function SkeletonCard() {
-  return (
-    <div className="flex flex-col rounded-xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex items-start gap-3">
-        <div className="h-10 w-10 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-        </div>
-        <div className="h-5 w-14 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-      </div>
-      <div className="mt-4 space-y-2">
-        <div className="h-6 w-1/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-      </div>
-    </div>
-  );
-}
 
 export default function SubscriptionListPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [sort, setSort] = useState<NonNullable<SortOption>>("created_at");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<SubscriptionResponse | null>(null);
+
+  // URL ?modal=new 감지 → 사이드 패널 자동 오픈
+  useEffect(() => {
+    if (searchParams.get("modal") === "new") {
+      setEditTarget(null);
+      setModalOpen(true);
+    }
+  }, [searchParams]);
 
   const queryReq: SubscriptionListRequest = {
     status: statusFilter,
@@ -74,26 +69,27 @@ export default function SubscriptionListPage() {
   const closeModal = () => {
     setModalOpen(false);
     setEditTarget(null);
+    if (searchParams.get("modal")) {
+      router.replace("/subscriptions");
+    }
   };
 
   return (
     <div className="flex flex-col gap-5">
       {/* 페이지 헤더 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">구독 목록</h1>
-          <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">
-            등록된 구독 서비스를 관리하세요
-          </p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-700"
-        >
-          <Plus className="h-4 w-4" />
-          구독 추가
-        </button>
-      </div>
+      <PageHeader
+        title="구독 목록"
+        description="등록된 구독 서비스를 관리하세요"
+        action={
+          <button
+            onClick={openCreate}
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-700"
+          >
+            <Plus className="h-4 w-4" />
+            구독 추가
+          </button>
+        }
+      />
 
       {/* 필터바 */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -140,9 +136,9 @@ export default function SubscriptionListPage() {
       {/* 콘텐츠 */}
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+          <Skeleton />
+          <Skeleton />
+          <Skeleton />
         </div>
       ) : isError ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 py-16 dark:border-gray-700">
@@ -170,8 +166,16 @@ export default function SubscriptionListPage() {
         </div>
       )}
 
-      {/* 등록/수정 모달 */}
-      <SubscriptionFormModal open={modalOpen} onClose={closeModal} initial={editTarget} />
+      {/* 등록/수정 모달 (주석 처리 — 사이드 패널로 교체) */}
+      {/* <SubscriptionFormModal open={modalOpen} onClose={closeModal} initial={editTarget} /> */}
+
+      {/* 사이드 패널 */}
+      <SubscriptionSidePanel
+        key={`${modalOpen}-${editTarget?.id ?? "new"}`}
+        open={modalOpen}
+        onClose={closeModal}
+        initial={editTarget}
+      />
     </div>
   );
 }

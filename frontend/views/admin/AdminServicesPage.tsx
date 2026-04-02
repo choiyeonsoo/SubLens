@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import Select from "@/components/ui/Select";
@@ -91,18 +92,16 @@ export default function AdminServicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">서비스 관리</h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            구독 서비스를 추가·수정·삭제합니다.
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          서비스 추가
-        </Button>
-      </div>
+      <PageHeader
+        title="서비스 관리"
+        description="구독 서비스를 추가·수정·삭제합니다."
+        action={
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            서비스 추가
+          </Button>
+        }
+      />
 
       {/* 필터 */}
       <div className="w-48">
@@ -302,10 +301,10 @@ export default function AdminServicesPage() {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <Button type="button" variant="outline" className="flex-1" onClick={closeModal}>
+                <Button type="button" variant="ghost" className="flex-1" onClick={closeModal}>
                   취소
                 </Button>
-                <Button type="submit" className="flex-1" disabled={isPending || !form.categoryId}>
+                <Button type="submit" variant="primary" className="flex-1" disabled={isPending || !form.categoryId}>
                   {isPending ? "저장 중…" : "저장"}
                 </Button>
               </div>

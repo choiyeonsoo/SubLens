@@ -18,4 +18,7 @@ public class SignupRequest {
 
     @NotBlank
     private String phoneNumber;
+
+    @NotBlank
+    private String mobileCarrier;
 }

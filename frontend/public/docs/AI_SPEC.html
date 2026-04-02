@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SUBLENS AI 아키텍처 · 크롤링 전략 기술 명세서</title>
+    <style>
+      @page {
+        margin: 20mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Malgun Gothic", "Segoe UI", sans-serif;
+        color: #1a1a1a;
+        line-height: 1.7;
+        max-width: 210mm;
+        margin: 0 auto;
+        padding: 20mm;
+        font-size: 11pt;
+      }
+      h1 {
+        font-size: 22pt;
+        border-bottom: 3px solid #111;
+        padding-bottom: 8px;
+        margin-top: 0;
+      }
+      h2 {
+        font-size: 15pt;
+        color: #222;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 5px;
+        margin-top: 28px;
+        page-break-after: avoid;
+      }
+      h3 {
+        font-size: 12pt;
+        color: #333;
+        margin-top: 18px;
+        page-break-after: avoid;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 16px;
+        font-size: 10pt;
+      }
+      th,
+      td {
+        border: 1px solid #bbb;
+        padding: 6px 10px;
+        text-align: left;
+      }
+      th {
+        background: #f0f0f0;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      td code,
+      p code,
+      li code {
+        background: #f4f4f4;
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 10pt;
+      }
+      pre {
+        background: #f6f6f6;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 12px;
+        font-size: 9.5pt;
+        overflow-x: auto;
+        line-height: 1.45;
+        page-break-inside: avoid;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+      }
+      .meta {
+        color: #777;
+        font-size: 10pt;
+        margin-bottom: 30px;
+      }
+      .flow-box {
+        background: #fafafa;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 14px 18px;
+        margin: 12px 0;
+        font-size: 10pt;
+      }
+      .flow-box p {
+        margin: 4px 0;
+      }
+      ul {
+        padding-left: 22px;
+      }
+      .section-divider {
+        border: none;
+        border-top: 1px dashed #ccc;
+        margin: 30px 0;
+      }
+      .toc {
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        padding: 16px 24px;
+        border-radius: 6px;
+        margin: 20px 0 30px;
+      }
+      .toc ul {
+        list-style: none;
+        padding-left: 0;
+      }
+      .toc li {
+        padding: 3px 0;
+      }
+      .toc a {
+        text-decoration: none;
+        color: #1565c0;
+      }
+      .callout {
+        border-left: 4px solid #1565c0;
+        background: #e8f0fb;
+        padding: 10px 16px;
+        border-radius: 0 6px 6px 0;
+        margin: 12px 0;
+        font-size: 10pt;
+      }
+      .callout.warn {
+        border-left-color: #e65100;
+        background: #fff3e0;
+      }
+      .callout.tip {
+        border-left-color: #2e7d32;
+        background: #e8f5e9;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 9pt;
+        font-weight: bold;
+        color: #fff;
+        margin-right: 4px;
+      }
+      .t1 {
+        background: #1565c0;
+      }
+      .t2 {
+        background: #2e7d32;
+      }
+      .t3 {
+        background: #e65100;
+      }
+      .t4 {
+        background: #c62828;
+      }
+      .new-badge {
+        display: inline-block;
+        padding: 1px 7px;
+        border-radius: 3px;
+        font-size: 8.5pt;
+        font-weight: bold;
+        color: #fff;
+        background: #6a1b9a;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      @media print {
+        body {
+          padding: 0;
+        }
+        .toc {
+          page-break-after: always;
+        }
+        h2 {
+          page-break-before: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SUBLENS AI 아키텍처 · 크롤링 전략 기술 명세서</h1>
+    <p class="meta">
+      프로젝트: SUBLENS (SaaS 기반 구독 관리 플랫폼)<br />
+      작성일: 2026-03-19 &nbsp;|&nbsp; 버전: 1.2 (2026-03-30 업데이트: 분류기 프롬프트 명세,
+      Conversation Memory 상한 추가)
+    </p>
+
+    <div class="toc">
+      <strong>목차</strong>
+      <ul>
+        <li>1. <a href="#s1">기술 스택 (AI 영역)</a></li>
+        <li>2. <a href="#s2">전체 AI 아키텍처</a></li>
+        <li>3. <a href="#s3">질문 타입 4가지 상세</a></li>
+        <li>
+          4. <a href="#s4">질문 유형 분류기 프롬프트 명세</a> <span class="new-badge">NEW</span>
+        </li>
+        <li>5. <a href="#s5">SQL 경로 상세 (NL2SQL + 3단 보안)</a></li>
+        <li>6. <a href="#s6">RAG 경로 상세</a></li>
+        <li>7. <a href="#s7">Conversation Memory</a></li>
+        <li>
+          8. <a href="#s8">Conversation Memory 토큰 예산</a> <span class="new-badge">NEW</span>
+        </li>
+        <li>9. <a href="#s9">번들 최적화 추천 흐름</a></li>
+        <li>10. <a href="#s10">DB 스키마</a></li>
+        <li>11. <a href="#s11">크롤링 전략</a></li>
+        <li>12. <a href="#s12">인프라 구성 (Docker Compose 추가분)</a></li>
+        <li>13. <a href="#s13">구현 우선순위</a></li>
+      </ul>
+    </div>
+
+    <!-- ================================================================== -->
+    <h2 id="s1">1. 기술 스택 (AI 영역)</h2>
+    <table>
+      <tr>
+        <th>구분</th>
+        <th>기술</th>
+      </tr>
+      <tr>
+        <td>LLM</td>
+        <td>Claude Sonnet 4.x (Anthropic REST API)</td>
+      </tr>
+      <tr>
+        <td>Vector DB</td>
+        <td>PGVector (기존 PostgreSQL 16에 extension으로 추가, 별도 서버 불필요)</td>
+      </tr>
+      <tr>
+        <td>Embedding</td>
+        <td>OpenAI Text-Embedding-3-large</td>
+      </tr>
+      <tr>
+        <td>AI 프레임워크</td>
+        <td>LangChain 1.2+ / LangGraph (Python FastAPI 마이크로서비스로 분리)</td>
+      </tr>
+      <tr>
+        <td>크롤러</td>
+        <td>Playwright (Python)</td>
+      </tr>
+      <tr>
+        <td>요약 LLM</td>
+        <td>Claude Haiku 4.5 (Conversation Memory 압축 전용, 저비용)</td>
+      </tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s2">2. 전체 AI 아키텍처</h2>
+    <div class="flow-box">
+      <p>사용자 자연어 질문</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;↓</p>
+      <p>Spring Boot (기존) → POST /api/ai/query → Python AI 서비스 (신규 Docker 컨테이너)</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;↓</p>
+      <p>
+        <strong>[1단계] 분류기</strong> — Claude Sonnet으로 질문 유형 판단 (max_tokens: 100, 저비용)
+      </p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;↓</p>
+      <p><strong>[2단계] LangChain Agent</strong> — 유형별 경로 실행</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;├─ 타입 1: 내 데이터 조회 &nbsp;&nbsp;→ SQL 경로</p>
+      <p>
+        &nbsp;&nbsp;&nbsp;&nbsp;├─ 타입 2: 서비스 안내 &nbsp;&nbsp;&nbsp;&nbsp;→ RAG (SUBLENS FAQ)
+      </p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;├─ 타입 3: 번들 상품 문의 &nbsp;→ RAG (번들 카탈로그 문서)</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;└─ 타입 4: 구독 최적화 추천 → SQL + 번들 DB + Claude 추론</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;↓</p>
+      <p><strong>[3단계]</strong> Claude Sonnet 4.x → 자연어 응답 생성 → 사용자</p>
+    </div>
+
+    <!-- ================================================================== -->
+    <h2 id="s3">3. 질문 타입 4가지 상세</h2>
+
+    <h3>타입 1 — 내 데이터 조회 (SQL)</h3>
+    <ul>
+      <li>"이번 달 구독료 얼마야?"</li>
+      <li>"올해 예상 구독 지출은?"</li>
+      <li>"넷플릭스 구독 시작한 게 언제야?"</li>
+    </ul>
+    <p>→ 사용자 DB (subscriptions) SQL 조회</p>
+
+    <h3>타입 2 — 서비스 안내 (RAG)</h3>
+    <ul>
+      <li>"구독 어떻게 추가해?"</li>
+      <li>"무료 플랜 한도가 뭐야?"</li>
+      <li>"결제 수단 변경 방법은?"</li>
+    </ul>
+    <p>→ SUBLENS FAQ 문서 벡터 검색 (<code>source = 'sublens_faq'</code>)</p>
+
+    <h3>타입 3 — 번들 상품 문의 (RAG)</h3>
+    <ul>
+      <li>"LGU+ 유독 약정 조건이 뭐야?"</li>
+      <li>"SKT T우주 중도 해지하면?"</li>
+      <li>"네이버 플러스 가족 공유 돼?"</li>
+    </ul>
+    <p>→ 번들 카탈로그 문서 벡터 검색 (<code>source = 'bundle_detail'</code>)</p>
+
+    <h3>타입 4 — 구독 최적화 추천 (복합)</h3>
+    <ul>
+      <li>"내 구독 최적화해줘"</li>
+      <li>"통신사 번들이 나한테 이득이야?"</li>
+      <li>"네이버 vs LGU+ 유독 뭐가 나아?"</li>
+    </ul>
+    <p>→ SQL(내 구독 현황) + 번들 카탈로그 DB + Claude 추론</p>
+    <p>→ 체크박스 혜택 선택값은 DB 저장 없이 요청 파라미터로 전달</p>
+    <p>→ 약정 등 단점은 ⚠️ 고지하되 최종 선택은 사용자에게 맡김</p>
+
+    <!-- ================================================================== -->
+    <h2 id="s4">4. 질문 유형 분류기 프롬프트 명세 <span class="new-badge">NEW</span></h2>
+
+    <div class="callout">
+      타입 1~4 분류 정확도는 전체 응답 품질을 결정하는 가장 중요한 단계다. 분류 오류는 완전히 다른
+      경로를 실행시키므로, 아래 프롬프트와 퓨샷 예시를 그대로 사용한다.
+    </div>
+
+    <h3>4.1 분류기 API 호출 설정</h3>
+    <table>
+      <tr>
+        <th>항목</th>
+        <th>값</th>
+        <th>이유</th>
+      </tr>
+      <tr>
+        <td>model</td>
+        <td><code>claude-sonnet-4-20250514</code></td>
+        <td>Haiku보다 분류 정확도 높음</td>
+      </tr>
+      <tr>
+        <td>max_tokens</td>
+        <td><code>100</code></td>
+        <td>JSON 결과만 받으므로 낮게 설정 (비용 절감)</td>
+      </tr>
+      <tr>
+        <td>temperature</td>
+        <td><code>0</code></td>
+        <td>분류 일관성 확보</td>
+      </tr>
+    </table>
+
+    <h3>4.2 시스템 프롬프트</h3>
+    <pre><code>You are a query classifier for SUBLENS, a subscription management platform.
+Classify the user's question into exactly one of four types.
+
+TYPE DEFINITIONS
+- type_1: Queries about the user's own subscription data (amounts, dates, counts, history).
+  Requires SQL lookup against the user's subscription records.
+- type_2: Queries about how to use SUBLENS itself (features, limits, billing, UI).
+  Answered from SUBLENS FAQ documents only.
+- type_3: Queries about specific bundle product terms, conditions, or specs
+  (contracts, cancellation, family sharing, eligibility).
+  Answered from bundle catalog documents only.
+- type_4: Queries asking for optimization, comparison, or recommendations
+  involving the user's own subscriptions AND bundle products together.
+
+AMBIGUITY RULES
+- If the question could be type_1 OR type_4, choose type_4.
+  (e.g. "내 구독이 번들이랑 겹쳐?" → type_4, not type_1)
+- If the question mentions a bundle name but only asks about its terms, choose type_3.
+  (e.g. "유독 해지하면 위약금 있어?" → type_3, not type_4)
+- If completely unrelated to subscriptions, classify as type_2 and answer with FAQ fallback.
+
+OUTPUT FORMAT — return only valid JSON, no explanation, no markdown:
+{"type": "type_1"|"type_2"|"type_3"|"type_4", "confidence": 0.0-1.0, "reason": "one sentence"}</code></pre>
+
+    <h3>4.3 퓨샷 예시 (시스템 프롬프트 뒤에 이어붙임)</h3>
+    <pre><code>EXAMPLES
+
+User: 이번 달 구독료 총액이 얼마야?
+{"type": "type_1", "confidence": 0.97, "reason": "사용자 본인의 구독 금액 집계 요청"}
+
+User: 올해 넷플릭스에 얼마 썼어?
+{"type": "type_1", "confidence": 0.95, "reason": "특정 서비스 연간 지출 조회"}
+
+User: 구독을 어떻게 추가해?
+{"type": "type_2", "confidence": 0.98, "reason": "SUBLENS 서비스 사용 방법 문의"}
+
+User: 무료 플랜 구독 한도가 몇 개야?
+{"type": "type_2", "confidence": 0.96, "reason": "SUBLENS 플랜 제한 조건 문의"}
+
+User: LGU+ 유독 중도 해지하면 위약금 얼마야?
+{"type": "type_3", "confidence": 0.97, "reason": "번들 상품 약정 해지 조건 문의"}
+
+User: SKT T우주 가족 공유 몇 명까지 돼?
+{"type": "type_3", "confidence": 0.95, "reason": "번들 상품 공유 조건 문의"}
+
+User: 내 구독 최적화해줘
+{"type": "type_4", "confidence": 0.98, "reason": "사용자 구독 데이터 + 번들 비교 추천 요청"}
+
+User: 통신사 번들이 나한테 이득이야?
+{"type": "type_4", "confidence": 0.97, "reason": "사용자 구독 현황과 번들 상품 비용 비교 필요"}
+
+User: 넷플릭스 유독 포함이면 나한테 얼마 절약돼?
+{"type": "type_4", "confidence": 0.96, "reason": "사용자 현재 구독 비용과 번들 가격 차이 계산 필요"}
+
+User: 요즘 날씨 어때?
+{"type": "type_2", "confidence": 0.60, "reason": "구독과 무관, FAQ 폴백 처리"}</code></pre>
+
+    <h3>4.4 엣지 케이스 처리 규칙</h3>
+    <table>
+      <tr>
+        <th>패턴</th>
+        <th>분류</th>
+        <th>근거</th>
+      </tr>
+      <tr>
+        <td>"나한테", "내 구독이랑" + 번들 언급</td>
+        <td><span class="badge t4">type_4</span></td>
+        <td>1인칭 + 번들 조합은 비교 추천 의도</td>
+      </tr>
+      <tr>
+        <td>번들 이름 단독 + 약관/조건 질문</td>
+        <td><span class="badge t3">type_3</span></td>
+        <td>추천 의도 없으면 번들 RAG로 충분</td>
+      </tr>
+      <tr>
+        <td>confidence &lt; 0.55</td>
+        <td><span class="badge t2">type_2 폴백</span></td>
+        <td>"더 자세히 말씀해주시면" 응답 트리거</td>
+      </tr>
+      <tr>
+        <td>구독과 무관한 질문</td>
+        <td><span class="badge t2">type_2 폴백</span></td>
+        <td>FAQ 폴백으로 안내</td>
+      </tr>
+    </table>
+
+    <h3>4.5 FastAPI 분류기 호출 코드</h3>
+    <pre><code>CLASSIFIER_SYSTEM_PROMPT = """...(4.2 내용)..."""
+FEWSHOT_EXAMPLES = """...(4.3 내용)..."""
+
+async def classify_query(user_question: str) -> dict:
+    response = await anthropic_client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=100,
+        system=CLASSIFIER_SYSTEM_PROMPT + "\n\n" + FEWSHOT_EXAMPLES,
+        messages=[{"role": "user", "content": user_question}]
+    )
+    result = json.loads(response.content[0].text)
+
+    # 낮은 확신 → FAQ 폴백
+    if result["confidence"] < 0.55:
+        result["type"] = "type_2"
+
+    return result
+    # {"type": "type_4", "confidence": 0.97, "reason": "..."}</code></pre>
+
+    <!-- ================================================================== -->
+    <h2 id="s5">5. SQL 경로 상세 (NL2SQL + 3단 보안 레이어)</h2>
+    <p>LLM이 SQL을 자유롭게 생성하되, 아래 3단 보안으로 안전하게 통제한다.</p>
+    <table>
+      <tr>
+        <th>단계</th>
+        <th>방법</th>
+        <th>목적</th>
+      </tr>
+      <tr>
+        <td>1. 스키마 제한</td>
+        <td>
+          LLM에게 <code>subscriptions</code>, <code>users</code> 테이블만 노출.
+          <code>password_hash</code> 등 민감 컬럼은 프롬프트에서 제외
+        </td>
+        <td>민감 데이터 접근 차단</td>
+      </tr>
+      <tr>
+        <td>2. userId 강제 주입</td>
+        <td>
+          LLM이 생성한 SQL에 서버 레벨에서 <code>WHERE user_id = :currentUserId</code> 조건을 실행
+          직전에 무조건 append
+        </td>
+        <td>타인 데이터 조회 방지</td>
+      </tr>
+      <tr>
+        <td>3. SELECT 전용 계정</td>
+        <td>AI 서비스가 사용하는 PostgreSQL 계정에 INSERT/UPDATE/DELETE 권한 물리적 차단</td>
+        <td>쓰기 쿼리 실행 불가</td>
+      </tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s6">6. RAG 경로 상세</h2>
+    <h3>사전 인덱싱 (문서 등록 시 1회)</h3>
+    <div class="flow-box">
+      <p>원본 문서 → 500자 단위 청킹 → 각 청크 임베딩(벡터 변환) → PGVector 저장</p>
+    </div>
+
+    <h3>실시간 검색 (질문마다)</h3>
+    <div class="flow-box">
+      <p>사용자 질문 → 질문만 임베딩 → PGVector 코사인 유사도 검색 → 상위 3개 청크 추출</p>
+      <p>→ Claude에게 "이 문서 참고해서 답해줘" → 자연어 응답</p>
+    </div>
+
+    <p><code>document_chunk</code> 테이블의 <code>source</code> 컬럼으로 타입 2/3 구분:</p>
+    <table>
+      <tr>
+        <th>source 값</th>
+        <th>용도</th>
+      </tr>
+      <tr>
+        <td><code>sublens_faq</code></td>
+        <td>타입 2 — SUBLENS 서비스 안내</td>
+      </tr>
+      <tr>
+        <td><code>bundle_detail</code></td>
+        <td>타입 3 — 번들 상품 약정/조건 상세</td>
+      </tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s7">7. Conversation Memory (대화 이어가기)</h2>
+
+    <p>
+      LangChain <code>ConversationSummaryBufferMemory</code>로 세션 내 대화 히스토리 유지. Redis에
+      <code>session_id</code> 기준으로 저장 (SUBLENS 기존 Redis 재사용). Redis TTL은
+      <strong>2시간</strong>으로 설정 — 페이지 새로고침이나 짧은 이탈 후 재방문 시에도 대화를 이어갈
+      수 있도록 한다.
+    </p>
+
+    <div class="callout tip">
+      <strong>BufferWindowMemory 대신 SummaryBufferMemory를 사용하는 이유:</strong><br />
+      <code>BufferWindowMemory(k=8)</code>는 8턴 초과 시 오래된 맥락을 완전히 잘라버린다.
+      <code>SummaryBufferMemory</code>는 5,000 토큰 초과분을 Haiku로 요약 압축하므로 맥락이 완전히
+      소실되지 않으며, 요약 비용도 Haiku 기준으로 매우 저렴하다.
+    </div>
+
+    <pre><code>from langchain.memory import ConversationSummaryBufferMemory
+from langchain_anthropic import ChatAnthropic
+
+# 요약은 저렴한 Haiku로 처리
+summarizer_llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
+    max_tokens=300
+)
+
+memory = ConversationSummaryBufferMemory(
+    llm=summarizer_llm,
+    max_token_limit=5000,   # 이 초과분부터 요약으로 압축
+    return_messages=True
+)
+
+# 세션당 Redis 키: f"conv_memory:{session_id}"
+# 직렬화: memory.save_context() → Redis SET (TTL 7200초)
+
+session_store = {}  # Redis로 관리
+
+def get_chain(session_id: str):
+    if session_id not in session_store:
+        memory = ConversationSummaryBufferMemory(
+            llm=summarizer_llm,
+            max_token_limit=5000,
+            return_messages=True
+        )
+        session_store[session_id] = ConversationChain(llm=claude, memory=memory)
+    return session_store[session_id]</code></pre>
+
+    <p>
+      사용자가 "그러면 추천이 뭐야?"처럼 이전 맥락을 이어서 질문해도 앞 대화를 기억하고 답변한다.
+      Redis TTL 만료(2시간) 시 메모리 초기화 (의도적 설계).
+    </p>
+
+    <!-- ================================================================== -->
+    <h2 id="s8">8. Conversation Memory 토큰 예산 <span class="new-badge">NEW</span></h2>
+
+    <div class="callout warn">
+      상한 없이 <code>ConversationBufferMemory</code>를 사용하면 장기 세션에서 히스토리만 13,000
+      토큰 이상 누적되어 Claude API 비용이 예측 불가능해진다. 반드시 아래 예산 기준을 준수한다.
+    </div>
+
+    <h3>8.1 API 호출 1회당 입력 토큰 구성 (타입 4 기준, 최악 케이스)</h3>
+    <table>
+      <tr>
+        <th>구성 요소</th>
+        <th>토큰 수</th>
+        <th>비고</th>
+      </tr>
+      <tr>
+        <td>시스템 프롬프트</td>
+        <td>~800</td>
+        <td>고정</td>
+      </tr>
+      <tr>
+        <td>RAG 청크 (상위 3개 × 500자)</td>
+        <td>~1,500</td>
+        <td>한국어 1자 ≈ 1토큰</td>
+      </tr>
+      <tr>
+        <td>SQL 결과 (구독 목록)</td>
+        <td>~500</td>
+        <td>구독 10건 기준</td>
+      </tr>
+      <tr>
+        <td>현재 사용자 질문</td>
+        <td>~50</td>
+        <td>평균 30~70자</td>
+      </tr>
+      <tr>
+        <td>대화 히스토리 (max_token_limit)</td>
+        <td>~5,000</td>
+        <td>SummaryBufferMemory 상한</td>
+      </tr>
+      <tr>
+        <td><strong>총 입력 (권장 상한)</strong></td>
+        <td><strong>~7,850</strong></td>
+        <td></td>
+      </tr>
+    </table>
+
+    <h3>8.2 실제 대화 1턴 토큰 감각 (한국어 기준)</h3>
+    <table>
+      <tr>
+        <th>메시지</th>
+        <th>토큰 수</th>
+        <th>예시</th>
+      </tr>
+      <tr>
+        <td>짧은 사용자 질문</td>
+        <td>~15</td>
+        <td>"내 구독 최적화해줘"</td>
+      </tr>
+      <tr>
+        <td>일반 사용자 질문</td>
+        <td>~50</td>
+        <td>"넷플릭스랑 유튜브 프리미엄 합치면 번들이 나아?"</td>
+      </tr>
+      <tr>
+        <td>Claude 짧은 답변</td>
+        <td>~200</td>
+        <td>2~3줄 요약 답변</td>
+      </tr>
+      <tr>
+        <td>Claude 분석 답변</td>
+        <td>~650</td>
+        <td>번들 비교 + 비용 계산 포함</td>
+      </tr>
+      <tr>
+        <td><strong>1턴 평균</strong></td>
+        <td><strong>~700</strong></td>
+        <td>한국어는 영어 대비 약 1.3~1.5배 토큰 소모</td>
+      </tr>
+    </table>
+
+    <div class="callout">
+      <strong>max_token_limit = 5,000 의 실질 의미:</strong><br />
+      1턴 평균 700 토큰이면 <strong>약 7왕복(7개 질문 + 7개 답변)</strong>까지 그대로 유지된다. 이를
+      초과하는 오래된 대화는 Haiku가 요약으로 압축하므로 맥락이 완전히 소실되지 않는다.
+    </div>
+
+    <h3>8.3 메모리 전략별 비교</h3>
+    <table>
+      <tr>
+        <th>전략</th>
+        <th>장점</th>
+        <th>단점</th>
+        <th>권장 여부</th>
+      </tr>
+      <tr>
+        <td><code>ConversationBufferMemory</code></td>
+        <td>구현 단순</td>
+        <td>무제한 누적, 비용 예측 불가</td>
+        <td>❌ 사용 금지</td>
+      </tr>
+      <tr>
+        <td><code>BufferWindowMemory(k=8)</code></td>
+        <td>상한 명확</td>
+        <td>8턴 초과 시 맥락 완전 소실</td>
+        <td>△ 단순 QA에만</td>
+      </tr>
+      <tr>
+        <td><code>SummaryBufferMemory(max=5000)</code></td>
+        <td>맥락 보존 + 비용 통제</td>
+        <td>요약 LLM 호출 발생</td>
+        <td>✅ 권장</td>
+      </tr>
+    </table>
+
+    <h3>8.4 Redis 저장 키 설계</h3>
+    <table>
+      <tr>
+        <th>키 패턴</th>
+        <th>값</th>
+        <th>TTL</th>
+        <th>용도</th>
+      </tr>
+      <tr>
+        <td><code>conv_memory:{session_id}</code></td>
+        <td>직렬화된 Memory 객체 (JSON)</td>
+        <td>7,200초 (2시간)</td>
+        <td>대화 히스토리 + 요약 상태 보존</td>
+      </tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s9">9. 번들 최적화 추천 흐름</h2>
+    <div class="flow-box">
+      <p>사용자 현재 구독 목록 (PostgreSQL SQL 조회)</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;+</p>
+      <p>users.mobile_carrier (통신사 정보)</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;+</p>
+      <p>체크한 혜택 목록 (요청 파라미터, DB 저장 안 함)</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;+</p>
+      <p>번들 카탈로그 DB</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;↓</p>
+      <p>LangChain Agent — 현재 총액 vs 번들 총액 비교</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;+</p>
+      <p>번들 약정/조건 상세 (RAG)</p>
+      <p>&nbsp;&nbsp;&nbsp;&nbsp;↓</p>
+      <p>Claude — 최적 조합 추천 + 약정 등 단점 고지 (선택은 사용자에게)</p>
+    </div>
+
+    <!-- ================================================================== -->
+    <h2 id="s10">10. DB 스키마</h2>
+
+    <h3>10.1 users 테이블 추가 컬럼</h3>
+    <pre><code>-- 통신사 (회원가입 시 수집, 한글값 그대로)
+ALTER TABLE users
+    ADD COLUMN mobile_carrier VARCHAR(20);
+UPDATE users SET mobile_carrier = 'LG U+';
+ALTER TABLE users ALTER COLUMN mobile_carrier SET NOT NULL;
+
+-- 허용값 6가지
+-- 'SKT', 'SKT 알뜰폰', 'KT', 'KT 알뜰폰', 'LG U+', 'LG U+ 알뜰폰'</code></pre>
+
+    <div class="callout warn">
+      인증 명세(SUBLENS_AUTH_SPEC v1.1)의 <code>SignupRequest</code> DTO에
+      <code>mobileCarrier</code> 필드 추가 및 프론트엔드 셀렉트박스 구현이 별도 필요하다. 인증
+      명세와 동기화할 것.
+    </div>
+
+    <h3>10.2 bundle_catalog</h3>
+    <pre><code>CREATE TABLE bundle_catalog (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    provider        VARCHAR(50)  NOT NULL,   -- 'LGU+', 'SKT', 'KT', 'NAVER', 'COUPANG'
+    provider_url    TEXT,
+    plan_name       VARCHAR(200) NOT NULL,
+    plan_url        TEXT,
+    description     TEXT,
+    includes        TEXT[]       NOT NULL,   -- {'넷플릭스','유튜브프리미엄'}
+    base_price      INTEGER      NOT NULL,
+    original_price  INTEGER,
+    discount_rate   INTEGER,
+    contract_months INTEGER,                 -- null이면 무약정
+    telecom_exclusive VARCHAR(20),           -- 'SKT','KT','LG U+', null이면 누구나 가입 가능
+    has_options     BOOLEAN      NOT NULL DEFAULT false,
+    is_active       BOOLEAN      NOT NULL DEFAULT true,
+    crawled_at      TIMESTAMP    NOT NULL DEFAULT now(),
+    created_at      TIMESTAMP    NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMP
+);
+
+CREATE INDEX idx_bundle_catalog_provider    ON bundle_catalog(provider);
+CREATE INDEX idx_bundle_catalog_is_active   ON bundle_catalog(is_active);
+CREATE INDEX idx_bundle_catalog_includes    ON bundle_catalog USING GIN(includes);
+-- 사용 예: SELECT * FROM bundle_catalog WHERE includes @> ARRAY['넷플릭스']</code></pre>
+
+    <h3>10.3 bundle_option</h3>
+    <pre><code>CREATE TABLE bundle_option (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bundle_id    UUID NOT NULL REFERENCES bundle_catalog(id) ON DELETE CASCADE,
+    option_name  VARCHAR(200) NOT NULL,   -- '넷플릭스 스탠다드'
+    option_spec  VARCHAR(300),            -- '동시접속 2명, FHD 화질'
+    extra_price  INTEGER NOT NULL DEFAULT 0,
+    total_price  INTEGER NOT NULL,
+    is_active    BOOLEAN NOT NULL DEFAULT true,
+    created_at   TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_bundle_option_bundle_id ON bundle_option(bundle_id);</code></pre>
+
+    <h3>10.4 bundle_price_history</h3>
+    <pre><code>CREATE TABLE bundle_price_history (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bundle_id     UUID NOT NULL REFERENCES bundle_catalog(id) ON DELETE CASCADE,
+    old_price     INTEGER NOT NULL,
+    new_price     INTEGER NOT NULL,
+    change_reason VARCHAR(100),
+    changed_at    TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_price_history_bundle_id  ON bundle_price_history(bundle_id);
+CREATE INDEX idx_price_history_changed_at ON bundle_price_history(changed_at);</code></pre>
+
+    <h3>10.5 document_chunk (RAG용 PGVector)</h3>
+    <pre><code>CREATE TABLE document_chunk (
+    id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source    VARCHAR(100) NOT NULL,  -- 'sublens_faq' or 'bundle_detail'
+    source_id UUID,                   -- bundle_catalog.id (번들 상세면)
+    content   TEXT NOT NULL,
+    embedding vector(1536),
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_document_chunk_embedding
+    ON document_chunk
+    USING ivfflat (embedding vector_cosine_ops)
+    WITH (lists = 100);
+-- ※ 청크 1000건 이상 쌓인 후 생성 권장
+-- ※ pgvector 0.5+ 환경에서는 HNSW 인덱스가 소규모에서 더 나은 성능을 보임:
+--   CREATE INDEX ON document_chunk USING hnsw (embedding vector_cosine_ops);</code></pre>
+
+    <h3>10.6 telecom_exclusive 활용 쿼리</h3>
+    <pre><code>-- LG U+ 사용자에게 보여줄 번들 (전용 상품 우선)
+SELECT * FROM bundle_catalog
+WHERE telecom_exclusive IS NULL
+   OR telecom_exclusive = 'LG U+'
+ORDER BY telecom_exclusive DESC NULLS LAST;
+
+-- 알뜰폰 사용자: 통신사 전용 번들 제외, 누구나 가입 가능한 상품만
+SELECT * FROM bundle_catalog
+WHERE telecom_exclusive IS NULL;</code></pre>
+
+    <!-- ================================================================== -->
+    <h2 id="s11">11. 크롤링 전략</h2>
+
+    <h3>11.1 사이트별 크롤링 방법 (직접 확인 완료)</h3>
+    <table>
+      <tr>
+        <th>사이트</th>
+        <th>URL</th>
+        <th>방법</th>
+        <th>로그인</th>
+        <th>봇차단</th>
+        <th>상태</th>
+      </tr>
+      <tr>
+        <td>LGU+ 유독</td>
+        <td>lguplus.com/pogg/category/전체</td>
+        <td>get_page_text + click 모달</td>
+        <td>불필요</td>
+        <td>없음</td>
+        <td>즉시 가능</td>
+      </tr>
+      <tr>
+        <td>SKT T우주</td>
+        <td>m.sktuniverse.co.kr/category/...</td>
+        <td>get_page_text</td>
+        <td>불필요</td>
+        <td>없음</td>
+        <td>즉시 가능</td>
+      </tr>
+      <tr>
+        <td>KT 구독</td>
+        <td>my.kt.com/product/OttSubscribeView.do</td>
+        <td>innerText + 탭 클릭</td>
+        <td>불필요</td>
+        <td>없음</td>
+        <td>즉시 가능</td>
+      </tr>
+      <tr>
+        <td>네이버 플러스</td>
+        <td>—</td>
+        <td>수동 입력</td>
+        <td>—</td>
+        <td>—</td>
+        <td>크롤링 불필요</td>
+      </tr>
+      <tr>
+        <td>쿠팡 로켓와우</td>
+        <td>—</td>
+        <td>수동 입력</td>
+        <td>—</td>
+        <td>—</td>
+        <td>단일 상품 구조</td>
+      </tr>
+    </table>
+
+    <div class="callout warn">
+      <strong>봇 감지 대응:</strong> 현재 "봇차단 없음"은 현 시점 기준이다. LGU+ 유독, KT는
+      세션·헤더 기반 차단이 추가될 수 있다. 크롤링 실패(상품 수 급감, 빈 응답 등) 감지 시
+      Slack/이메일 알림 → 수동 확인 플로우를 파이프라인에 포함해야 한다.
+    </div>
+
+    <h3>11.2 네이버 플러스 / 쿠팡 로켓와우 수동 입력</h3>
+    <p>
+      단일 상품 구조라 크롤러 효용이 없다. DB에 직접 수동 입력 후 혜택 변경 시 수동 업데이트한다.
+    </p>
+    <pre><code>-- 네이버 플러스 수동 입력 예시
+INSERT INTO bundle_catalog (
+    provider, plan_name, includes, base_price,
+    contract_months, has_options, telecom_exclusive
+) VALUES (
+    'NAVER', '네이버 플러스 멤버십',
+    ARRAY['넷플릭스(광고형)', '티빙', '네이버웹툰'],
+    4900, NULL, true, NULL  -- 무약정, 누구나 가입 가능
+);</code></pre>
+
+    <h3>11.3 크롤링 파이프라인</h3>
+    <pre><code># Step 1: 목록 페이지 → 상품 URL 수집
+def crawl_list_page(url):
+    page.goto(url)
+    text = page.inner_text('main')
+
+# Step 2: 상품 상세 + 옵션 수집
+def crawl_product_detail(url):
+    page.goto(url)
+    base_info = page.inner_text('body')
+    page.click('[class*="option"]')
+    page.wait_for_selector('[role="dialog"]')
+    options = page.inner_text('[role="dialog"]')
+    return parse_to_json(base_info, options)
+
+# Step 3: DB 저장 (변경 감지 포함)
+def save_with_diff(new_data):
+    existing = db.query("SELECT * FROM bundle_catalog WHERE plan_name = ?", new_data.plan_name)
+    if existing and existing.base_price != new_data.base_price:
+        db.insert("bundle_price_history", {
+            "bundle_id": existing.id,
+            "old_price": existing.base_price,
+            "new_price": new_data.base_price,
+            "change_reason": "crawl_update"
+        })
+        notify_affected_users(existing.id)
+    db.upsert("bundle_catalog", new_data)
+
+# Step 4: 실패 감지 (상품 수 이상 감지)
+def validate_crawl_result(new_count, expected_min):
+    if new_count < expected_min * 0.7:  # 30% 이상 감소 시 알림
+        send_alert(f"크롤링 이상 감지: {new_count}건 (기대 최소 {expected_min}건)")
+        raise CrawlValidationError("봇 차단 또는 페이지 구조 변경 의심")</code></pre>
+
+    <h3>11.4 크롤링 실행 주기</h3>
+    <table>
+      <tr>
+        <th>주기</th>
+        <th>내용</th>
+        <th>목적</th>
+      </tr>
+      <tr>
+        <td>매일 새벽 3시</td>
+        <td>
+          목록 페이지만 빠르게 확인 → DB와 가격 비교 → 변동 있으면 해당 상품만 상세 크롤링 트리거 →
+          영향받는 유저 알림
+        </td>
+        <td>가격 변동 감지 (가벼움)</td>
+      </tr>
+      <tr>
+        <td>매주 월요일 새벽 2시</td>
+        <td>모든 상품 페이지 + 옵션 모달 순회 → 신규 상품 추가, 삭제된 상품 soft delete</td>
+        <td>전체 크롤링 (무거움)</td>
+      </tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <h2 id="s12">12. 인프라 구성 (Docker Compose 추가분)</h2>
+    <pre><code>services:
+  ai-service:        # 신규 — LangChain Agent + FastAPI
+    image: python:3.12
+    ports: ["8001:8001"]
+    depends_on: [postgres, redis]
+    environment:
+      - ANTHROPIC_API_KEY
+      - OPENAI_API_KEY
+      - DATABASE_URL
+
+  crawler:           # 신규 — Playwright 크롤러 (크론잡)
+    image: python:3.12
+    depends_on: [postgres]
+
+  # 기존: postgres, redis, backend(Spring Boot), frontend(Next.js), nginx</code></pre>
+
+    <p>PGVector는 기존 postgres에 extension 추가:</p>
+    <pre><code>CREATE EXTENSION IF NOT EXISTS vector;</code></pre>
+
+    <h3>오픈뱅킹 연동 (MVP 이후 고려)</h3>
+    <p>
+      MVP 단계에서는 사용자 수동 입력으로 시작. 이후 단계에서 금융결제원 오픈뱅킹 API 연동 고려.
+    </p>
+    <table>
+      <tr>
+        <th>항목</th>
+        <th>내용</th>
+      </tr>
+      <tr>
+        <td>API</td>
+        <td>금융결제원 오픈뱅킹 (https://openapi.kftc.or.kr)</td>
+      </tr>
+      <tr>
+        <td>비용</td>
+        <td>무료</td>
+      </tr>
+      <tr>
+        <td>요건</td>
+        <td>사업자등록증, ISMS 또는 예외 인정</td>
+      </tr>
+      <tr>
+        <td>기간</td>
+        <td>심사 2~4개월</td>
+      </tr>
+      <tr>
+        <td>효과</td>
+        <td>카드 결제 내역 자동 분석 → 구독 자동 감지</td>
+      </tr>
+    </table>
+    <p>
+      쿠콘 같은 중계 서비스는 건당 수수료 부담으로 초기에 비적합. MVP 출시와 동시에 금융결제원 심사
+      신청을 병행하는 것이 현실적.
+    </p>
+
+    <!-- ================================================================== -->
+    <h2 id="s13">13. 구현 우선순위</h2>
+    <table>
+      <tr>
+        <th>순서</th>
+        <th>작업</th>
+        <th>비고</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>PGVector extension 활성화 + 전체 DB 스키마 생성</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>users 테이블 mobile_carrier 컬럼 추가 (인증 명세 SignupRequest 동기화 필요)</td>
+        <td>인증 명세 v1.1 참조</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>LGU+ 유독 크롤러 구현 및 데이터 수집</td>
+        <td>병행: 6번 FastAPI 초기 구조</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>SKT, KT 크롤러 추가</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>네이버 플러스 / 쿠팡 로켓와우 수동 데이터 입력</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>
+          FastAPI AI 서비스 구축 (분류기 프롬프트 + LangChain Agent + SQL 3단 보안 +
+          SummaryBufferMemory)
+        </td>
+        <td>4장, 8장 명세 적용</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Spring Boot → AI 서비스 REST 연동 (session_id 포함)</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>RAG 경로 구축 (SUBLENS FAQ + 번들 상세 문서 임베딩)</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>번들 최적화 추천 로직 완성 (타입 4)</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>일별 가격 감지 크론잡 + 변동 알림 + 크롤링 실패 감지</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td>(향후) 금융결제원 오픈뱅킹 연동 심사 신청</td>
+        <td></td>
+      </tr>
+    </table>
+
+    <hr style="margin-top: 40px" />
+    <p style="text-align: center; color: #999; font-size: 9pt">
+      SUBLENS AI Architecture Specification v1.2 &nbsp;|&nbsp; 2026-03-30<br />
+      변경 이력: v1.1 → v1.2 — 4장(분류기 프롬프트 명세), 8장(토큰 예산) 신규 추가 / 7장(Memory 전략
+      변경) / 11장(크롤링 실패 감지 추가)
+    </p>
+  </body>
+</html>

@@ -28,6 +28,8 @@ public class SubscriptionUpdateRequest {
     @Size(max = 100, message = "서비스명은 100자 이하여야 합니다.")
     private String serviceName;
 
+    private UUID serviceId;
+
     private String description;
 
     private UUID categoryId;

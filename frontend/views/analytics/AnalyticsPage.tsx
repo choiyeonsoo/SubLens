@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useTheme } from "next-themes";
+import { Skeleton } from "@/components/ui/Skeleton";
+import PageHeader from "@/components/PageHeader";
 import {
   BarChart,
   Bar,
@@ -18,30 +21,9 @@ import { useSubscriptions, useSubscriptionServices } from "@/features/subscripti
 import type { SubscriptionResponse } from "@/features/subscription/types";
 import ServiceLogo from "@/components/ServiceLogo";
 
+import { formatAmount, toMonthlyAmount } from "@/lib/formatters";
+
 // ── Helpers ───────────────────────────────────────────────────────
-
-function toMonthlyAmount(amount: number, cycle: string): number {
-  if (cycle === "YEARLY") return amount / 12;
-  if (cycle === "WEEKLY") return amount * (52 / 12);
-  return amount;
-}
-
-const CURRENCY_LOCALE: Record<string, { locale: string; currency: string }> = {
-  KRW: { locale: "ko-KR", currency: "KRW" },
-  USD: { locale: "en-US", currency: "USD" },
-  EUR: { locale: "de-DE", currency: "EUR" },
-  JPY: { locale: "ja-JP", currency: "JPY" },
-  GBP: { locale: "en-GB", currency: "GBP" },
-};
-
-function formatAmount(amount: number, currency: string): string {
-  const config = CURRENCY_LOCALE[currency] ?? { locale: "ko-KR", currency };
-  return new Intl.NumberFormat(config.locale, {
-    style: "currency",
-    currency: config.currency,
-    maximumFractionDigits: currency === "KRW" || currency === "JPY" ? 0 : 2,
-  }).format(amount);
-}
 
 /** 특정 년/월에 해당 구독이 청구된 금액을 반환 (WEEKLY는 해당 월의 발생 횟수 × 금액) */
 function getMonthAmount(sub: SubscriptionResponse, year: number, month: number): number {
@@ -150,11 +132,6 @@ const PERIOD_TABS: { label: string; value: Period }[] = [
   { label: "전체", value: "all" },
 ];
 
-function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800 ${className}`} />
-  );
-}
 
 // ── Main Component ────────────────────────────────────────────────
 
@@ -162,6 +139,7 @@ export default function AnalyticsPage() {
   const { data: allSubs = [], isLoading } = useSubscriptions({ status: "ALL" });
   const { data: services = [] } = useSubscriptionServices();
   const [period, setPeriod] = useState<Period>("6m");
+  const { resolvedTheme } = useTheme();
 
   const activeSubs = useMemo(
     () => allSubs.filter((s) => s.status === "ACTIVE"),
@@ -347,6 +325,9 @@ export default function AnalyticsPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-7xl space-y-6 p-6">
+        {/* ── 페이지 헤더 ── */}
+        <PageHeader title="지출 분석" description="구독별 지출 패턴과 카테고리 비중을 분석하세요" />
+
         {/* ── Section 1: 요약 지표 4개 ── */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {/* 총 누적 지출 */}
@@ -463,7 +444,7 @@ export default function AnalyticsPage() {
                       border: "1px solid #e5e7eb",
                       fontSize: 12,
                     }}
-                    cursor={{ fill: "#f5f3ff" }}
+                    cursor={{ fill: resolvedTheme === "dark" ? "rgba(124, 58, 237, 0.15)" : "#f5f3ff" }}
                   />
                   <Bar dataKey="amount" fill="#7C3AED" radius={[4, 4, 0, 0]} maxBarSize={48} />
                 </BarChart>

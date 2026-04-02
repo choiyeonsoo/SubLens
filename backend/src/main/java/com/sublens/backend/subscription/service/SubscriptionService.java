@@ -117,6 +117,7 @@ public class SubscriptionService {
                 .userId(userId)
                 .category(category)
                 .serviceName(request.getServiceName())
+                .serviceId(request.getServiceId())
                 .description(request.getDescription())
                 .amount(request.getAmount())
                 .currency(request.getCurrency() != null ? request.getCurrency() :
@@ -156,6 +157,7 @@ public class SubscriptionService {
 
         subscription.setCategory(category);
         subscription.setServiceName(request.getServiceName());
+        subscription.setServiceId(request.getServiceId());
         subscription.setDescription(request.getDescription());
         subscription.setAmount(request.getAmount());
         if (request.getCurrency() != null) subscription.setCurrency(request.getCurrency());

@@ -53,6 +53,9 @@ public class Subscription {
     @Column(name = "service_name", nullable = false, length = 100)
     private String serviceName;
 
+    @Column(name = "service_id")
+    private UUID serviceId;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
