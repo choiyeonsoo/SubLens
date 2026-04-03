@@ -1,5 +1,6 @@
 import api from '@/lib/axios';
 import type {
+  BundleItem,
   CategoryResponse,
   SubscriptionCreateRequest,
   SubscriptionListRequest,
@@ -38,5 +39,10 @@ export const deleteSubscription = async (id: string): Promise<void> => {
 
 export const getCategories = async (): Promise<CategoryResponse[]> => {
   const response = await api.post('/api/categories/list');
+  return response.data.data;
+};
+
+export const getBundles = async (provider: string): Promise<BundleItem[]> => {
+  const response = await api.get('/api/bundles', { params: { provider } });
   return response.data.data;
 };

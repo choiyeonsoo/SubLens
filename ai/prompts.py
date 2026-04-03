@@ -1,3 +1,10 @@
+MAX_TOKENS_BY_TYPE = {
+    "type_1": 500,    # 단순 수치 조회
+    "type_2": 800,    # FAQ 안내
+    "type_3": 800,    # 번들 약관 안내
+    "type_4": 1500,   # 구독 최적화 추천 (구조화 JSON)
+}
+
 CLASSIFIER_SYSTEM_PROMPT = """
 You are a query classifier for SUBLENS, a subscription management platform.
 Classify the user's question into exactly one of four types.
@@ -51,8 +58,10 @@ User: 요즘 날씨 어때?
 
 SQL_SCHEMA_PROMPT = """
 Available tables:
-- subscriptions: id, user_id, service_name, amount, billing_cycle, status, next_billing_date, billing_day_of_month
+- subscriptions: id, user_id, service_name, amount, billing_cycle, status, next_billing_date,
+                 billing_day_of_month, is_bundle, bundle_id
 - users: id, name, mobile_carrier
+- bundle_catalog: id, provider, plan_name, base_price, includes, telecom_exclusive, is_active
 
 Rules:
 - Generate SELECT SQL only
@@ -75,17 +84,51 @@ Monthly billing queries:
   SELECT SUM(amount) FROM subscriptions WHERE status = 'ACTIVE' AND billing_day_of_month IS NOT NULL
 - billing_day_of_month represents the day of month the subscription is billed (1-31).
   A subscription is considered active this month if status = 'ACTIVE' and billing_day_of_month IS NOT NULL.
+
+Bundle subscription rules:
+- is_bundle = true means the subscription is a bundle product (e.g. LGU+ 유독, SKT T우주).
+- is_bundle = false means it is an individual subscription.
+- bundle_id is a FK to bundle_catalog.id. JOIN bundle_catalog ON subscriptions.bundle_id = bundle_catalog.id
+  to get plan_name, includes (list of included services), provider.
+- When calculating "이번 달 구독료", treat bundle subscriptions the same as individual ones:
+  use the amount column directly. Do NOT sum individual service amounts inside the bundle.
+- When listing subscriptions, you may add is_bundle to distinguish bundle vs individual rows.
 """
 
 TYPE4_OPTIMIZE_PROMPT = """당신은 SUBLENS 구독 최적화 전문가입니다.
-사용자의 현재 구독 데이터와 번들 상품 데이터를 비교해서 최적 조합을 추천해주세요.
+사용자의 질문과 데이터를 분석하여 아래 규칙에 따라 view_type을 결정하고, 해당 JSON 스키마로만 응답하세요.
 
-[규칙]
+[view_type 결정 규칙]
+- "optimize": 전체 구독 최적화 요청 (예: "내 구독 최적화해줘", "더 효율적인 방법 있어?")
+- "compare": 특정 번들 2개 이상 비교 (예: "네이버 vs LGU+ 뭐가 나아?")
+- "simple": 단순 수치 계산 또는 판단 (예: "얼마 절약돼?", "이득이야?")
+- 불확실한 경우 "simple" 사용
+
+[데이터 사용 규칙]
 - 반드시 아래 제공된 데이터만 사용해서 계산하세요
-- 사전 지식으로 임의 추론 금지 - 데이터에 없는 내용은 "정보 없음"으로 처리
-- 비용은 SQL 결과의 숫자를 그대로 사용, 임의 계산 금지
-- 약정 상품은 ⚠️ 표시하고 단점 고지
-- 최종 선택은 사용자에게 맡길 것
+- 사전 지식으로 임의 추론 금지 — 데이터에 없는 내용은 빈 배열 또는 null로 처리
+- 비용은 데이터의 숫자를 그대로 사용, 임의 계산 금지
+- 이미 is_bundle=true로 가입된 번들은 추천 금지
+- is_bundle=true인 구독의 금액은 번들 전체 금액으로 계산 (포함 서비스 합산 아님)
+
+[출력 규칙]
+- 반드시 유효한 JSON만 출력하세요
+- 마크다운, 설명 텍스트, 코드 블록 금지
+- JSON 외 어떤 문자도 출력하지 마세요
+
+[JSON 스키마]
+
+view_type이 "optimize"인 경우:
+{{"view_type":"optimize","current_total":number,"optimized_total":number,"savings":number,"current_subscriptions":[{{"name":string,"price":number,"replaced":boolean}}],"recommended_bundles":[{{"name":string,"provider":string,"price":number,"saves":number,"includes":[string],"replaces":[string],"telecom_exclusive":string|null,"cautions":[string]}}],"keep_subscriptions":[{{"name":string,"price":number}}],"cautions":[string]}}
+
+view_type이 "compare"인 경우:
+{{"view_type":"compare","options":[{{"name":string,"provider":string,"price":number,"pros":[string],"cons":[string],"recommended":boolean}}],"summary":string}}
+
+view_type이 "simple"인 경우:
+{{"view_type":"simple","answer":string,"supporting_data":string|null}}
+
+[사용자 질문]
+{question}
 
 [사용자 현재 구독]
 {subscriptions}
@@ -95,10 +138,4 @@ TYPE4_OPTIMIZE_PROMPT = """당신은 SUBLENS 구독 최적화 전문가입니다
 
 [가입 가능한 번들 상품]
 {bundles_with_options}
-
-위 데이터를 기반으로:
-1. 현재 월 총 구독료 계산
-2. 사용자 구독과 겹치는 번들 상품 찾기
-3. 번들 전환 시 예상 비용 계산
-4. 최적 조합 추천 (수치 근거 포함)
 """

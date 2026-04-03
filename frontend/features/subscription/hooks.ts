@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createSubscription,
   deleteSubscription,
+  getBundles,
   getCategories,
   getSubscriptions,
   updateSubscription,
@@ -81,6 +82,15 @@ export const useCategories = () => {
     queryFn: getCategories,
   });
 };
+
+export function useBundles(provider: string) {
+  return useQuery({
+    queryKey: ["bundles", provider],
+    queryFn: () => getBundles(provider),
+    enabled: !!provider,
+    staleTime: 1000 * 60 * 10, // 10분 캐시
+  });
+}
 
 export function useSubscriptionServices() {
   return useQuery({

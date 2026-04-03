@@ -1,8 +1,14 @@
+import json
+import logging
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from classifier import classify_query
 import memory as mem
 from agents import type1_sql, type2_rag, type3_rag, type4_optimize
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -14,7 +20,7 @@ class QueryRequest(BaseModel):
 
 
 class QueryResponse(BaseModel):
-    answer: str
+    answer: Any
     query_type: str
     confidence: float
 
@@ -39,9 +45,12 @@ async def query(req: QueryRequest):
         else:
             answer = "알 수 없는 질문 유형입니다."
     except Exception as e:
+        logger.error(f"[query] agent 오류 — type={query_type}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
     # Step 3: Persist conversation turn
-    mem.append_turn(req.session_id, req.question, answer)
+    # Claude API requires content to be a string — serialize dict answers (type_4) before storing
+    history_answer = json.dumps(answer, ensure_ascii=False) if isinstance(answer, dict) else answer
+    mem.append_turn(req.session_id, req.question, history_answer)
 
     return QueryResponse(answer=answer, query_type=query_type, confidence=confidence)

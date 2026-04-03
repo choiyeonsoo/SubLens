@@ -18,6 +18,9 @@ export interface SubscriptionCreateRequest {
   billingDateOfYear?: string;  // YEARLY 전용 ("MMDD", 예: "0319")
   notifyBefore?: boolean;
   notifyDaysBefore?: number;
+  // 번들 구독
+  isBundle?: boolean;
+  bundleId?: string;
 }
 
 export interface SubscriptionUpdateRequest extends SubscriptionCreateRequest {
@@ -39,12 +42,22 @@ export interface SubscriptionResponse {
   billingDayOfMonth?: number;
   billingDayOfWeek?: number;
   billingDateOfYear?: string;
+  isBundle: boolean;
+  bundleId?: string;
   category?: {
     id: string;
     name: string;
     icon: string;
     color: string;
   };
+}
+
+export interface BundleItem {
+  id: string;
+  provider: string;
+  planName: string;
+  basePrice: number;
+  includes: string[];
 }
 
 export interface CategoryResponse {

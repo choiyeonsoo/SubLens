@@ -49,10 +49,15 @@
       "Bash(xargs -I {} find {} -type d)",
       "Bash(grep -v \"^$\")",
       "Bash(ls -la /d/sublens/frontend/app/\"\\(app\\)\"/)",
-      "Bash(ls -la /d/sublens/frontend/app/\"\\(auth\\)\"/)"
+      "Bash(ls -la /d/sublens/frontend/app/\"\\(auth\\)\"/)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")",
+      "Bash(grep -E \"\\(^[^/]*$|/[^/]*$\\)\")",
+      "Bash(python -m pytest tests/test_type4_calculator.py -v)",
+      "Read(//d/sublens/**)"
     ],
     "additionalDirectories": [
-      "d:\\sublens\\frontend\\.git"
+      "d:\\sublens\\frontend\\.git",
+      "d:\\sublens\\backend\\src\\main\\java\\com\\sublens\\backend"
     ]
   }
 }

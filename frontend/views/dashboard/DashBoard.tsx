@@ -148,16 +148,14 @@ export default function DashBoard() {
     monday.setDate(today.getDate() + daysToMonday);
 
     // This month subs (next_billing_date in current month), sorted asc
-    const thisMonthSubs = activeSubs
-      .filter((s) => {
-        const d = new Date(s.nextBillingDate);
-        d.setHours(0, 0, 0, 0);
-        return d.getFullYear() === year && d.getMonth() === month;
-      })
-      .sort(
-        (a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime()
-      );
-
+    const thisMonthSubs = activeSubs.filter((s) => {
+      const start = new Date(s.startDate);
+      return start <= new Date(year, month + 1, 0);
+    });
+    const test = activeSubs.forEach((s) => {
+      const d = new Date(s.nextBillingDate);
+      console.log(s.serviceName, d.toISOString());
+    });
     // Next month subs (max 3)
     const nm = month === 11 ? 0 : month + 1;
     const nmy = month === 11 ? year + 1 : year;
@@ -172,13 +170,23 @@ export default function DashBoard() {
     // This week subs (today ~ sunday), sorted asc
     const thisWeekSubs = activeSubs
       .filter((s) => {
-        const d = new Date(s.nextBillingDate);
-        d.setHours(0, 0, 0, 0);
-        return d >= today && d <= sunday;
+        if (s.billingCycle !== "MONTHLY") return false;
+
+        const day = s.billingDayOfMonth ?? 1;
+
+        const billingDate = new Date(year, month, day);
+        billingDate.setHours(0, 0, 0, 0);
+
+        const start = new Date(s.startDate);
+        start.setHours(0, 0, 0, 0);
+
+        return billingDate >= start && billingDate >= today && billingDate <= sunday;
       })
-      .sort(
-        (a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime()
-      );
+      .sort((a, b) => {
+        const ad = new Date(year, month, a.billingDayOfMonth ?? 1);
+        const bd = new Date(year, month, b.billingDayOfMonth ?? 1);
+        return ad.getTime() - bd.getTime();
+      });
 
     // Totals
     const thisMonthTotal = thisMonthSubs.reduce((s, x) => s + x.amount, 0);
@@ -300,13 +308,13 @@ export default function DashBoard() {
         {/* ── Section 1: Summary Cards ── */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <SummaryCard
-            title="이번 달 지출 예정"
+            title="이번 달 지출"
             value={fmt(thisMonthTotal)}
             sub={`${thisMonthSubs.length}건 갱신 예정`}
             accent="text-violet-600 dark:text-violet-400"
           />
           <SummaryCard
-            title="이번 주 지출 예정"
+            title="이번 주 지출"
             value={fmt(thisWeekTotal)}
             sub={weekSubLabel}
             accent="text-blue-600 dark:text-blue-400"
@@ -411,11 +419,9 @@ export default function DashBoard() {
 
         {/* ── Section 3: Weekly / Monthly / Status ── */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {/* Left: 이번 주 지출 예정 */}
+          {/* Left: 이번 주 지출 */}
           <div className="rounded-xl border border-gray-100 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              이번 주 지출 예정
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">이번 주 지출</h3>
             <p className="mb-3 mt-0.5 text-xs text-gray-400 dark:text-gray-500">{weekLabel}</p>
             <p className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
               {fmt(thisWeekTotal)}
@@ -431,11 +437,9 @@ export default function DashBoard() {
             )}
           </div>
 
-          {/* Center: 이번 달 지출 예정 */}
+          {/* Center: 이번 달 지출 */}
           <div className="rounded-xl border border-gray-100 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              이번 달 지출 예정
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">이번 달 지출</h3>
             <p className="mb-3 mt-0.5 text-xs text-gray-400 dark:text-gray-500">{monthLabel}</p>
             <p className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
               {fmt(thisMonthTotal)}

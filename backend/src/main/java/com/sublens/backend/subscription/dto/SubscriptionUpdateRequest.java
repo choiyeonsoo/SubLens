@@ -59,6 +59,10 @@ public class SubscriptionUpdateRequest {
              message = "연간 청구일은 MMDD 형식이어야 합니다. (예: 0319)")
     private String billingDateOfYear;
 
+    private boolean isBundle = false;
+
+    private UUID bundleId;
+
     private boolean notifyBefore = true;
 
     @Min(value = 1, message = "알림 일수는 최소 1일입니다.")

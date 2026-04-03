@@ -76,3 +76,12 @@ package.json
 # ──────────────────────────────────────────
 *.log
 logs/
+
+# Byte-compiled
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# pytest
+.pytest_cache/

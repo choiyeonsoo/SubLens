@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Sparkles, Send, Bot, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
+import AiResponseRenderer from "@/features/ai/components/AiResponseRenderer";
+import { AiResponse } from "@/features/ai/types";
 
 const AI_API_URL =
   (process.env.NEXT_PUBLIC_AI_API_URL ?? "http://localhost:8001") + "/api/ai/query";
@@ -31,7 +33,7 @@ const TYPE_BADGE: Record<string, { label: string; className: string }> = {
 interface Message {
   id: string;
   role: "user" | "ai";
-  content: string;
+  content: string | AiResponse;
   query_type?: string;
 }
 
@@ -221,7 +223,7 @@ export default function RecommendView() {
         throw new Error(`서버 오류 (${res.status}): ${text}`);
       }
 
-      const data: { answer: string; query_type: string; confidence: number } =
+      const data: { answer: string | AiResponse; query_type: string; confidence: number } =
         await res.json();
 
       const aiMsg: Message = {
@@ -388,7 +390,7 @@ export default function RecommendView() {
               msg.role === "user" ? (
                 <div key={msg.id} className="flex justify-end">
                   <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-violet-600 px-4 py-2.5 text-sm leading-relaxed text-white">
-                    {msg.content}
+                    {msg.content as string}
                   </div>
                 </div>
               ) : (
@@ -404,9 +406,13 @@ export default function RecommendView() {
                         {TYPE_BADGE[msg.query_type].label}
                       </span>
                     )}
-                    <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                      <span dangerouslySetInnerHTML={parseMarkdown(msg.content)} />
-                    </div>
+                    {typeof msg.content === "string" ? (
+                      <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                        <span dangerouslySetInnerHTML={parseMarkdown(msg.content)} />
+                      </div>
+                    ) : (
+                      <AiResponseRenderer response={msg.content} />
+                    )}
                   </div>
                 </div>
               ),

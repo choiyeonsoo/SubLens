@@ -4,7 +4,7 @@ import re
 import anthropic
 from dotenv import load_dotenv
 from db import execute_query
-from prompts import SQL_SCHEMA_PROMPT
+from prompts import SQL_SCHEMA_PROMPT, MAX_TOKENS_BY_TYPE
 import memory as mem
 
 load_dotenv()
@@ -19,11 +19,24 @@ _DANGEROUS_KEYWORDS = re.compile(
 
 
 def _inject_user_id(sql: str, user_id: str) -> str:
-    """Force-inject WHERE user_id = :user_id into any SELECT query."""
+    """Force-inject WHERE user_id = '...' before any trailing clause (ORDER BY / GROUP BY / LIMIT / OFFSET)."""
     sql = sql.strip().rstrip(";")
-    if re.search(r"\bWHERE\b", sql, re.IGNORECASE):
-        return f"{sql} AND user_id = '{user_id}'"
-    return f"{sql} WHERE user_id = '{user_id}'"
+    user_filter = f"user_id = '{user_id}'"
+    has_where = bool(re.search(r"\bWHERE\b", sql, re.IGNORECASE))
+
+    # Find the first ORDER BY / GROUP BY / LIMIT / OFFSET that is at the top level (depth 0)
+    trailing = re.compile(r"\b(ORDER\s+BY|GROUP\s+BY|LIMIT|OFFSET)\b", re.IGNORECASE)
+    for m in trailing.finditer(sql):
+        depth = sql[: m.start()].count("(") - sql[: m.start()].count(")")
+        if depth == 0:
+            prefix = sql[: m.start()].rstrip()
+            suffix = sql[m.start() :]
+            connector = "AND" if has_where else "WHERE"
+            return f"{prefix} {connector} {user_filter} {suffix}"
+
+    # No trailing clauses — append at end
+    connector = "AND" if has_where else "WHERE"
+    return f"{sql} {connector} {user_filter}"
 
 
 def _is_safe_sql(sql: str) -> bool:
@@ -92,7 +105,7 @@ async def run(question: str, user_id: str, session_id: str) -> str:
 
     answer_response = _client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=1000,
+        max_tokens=MAX_TOKENS_BY_TYPE["type_1"],
         system="당신은 SUBLENS 구독 관리 도우미입니다. SQL 조회 결과를 바탕으로 사용자 질문에 친절하게 한국어로 답변해주세요.",
         messages=messages,
     )
