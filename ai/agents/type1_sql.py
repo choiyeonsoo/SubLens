@@ -86,6 +86,7 @@ async def run(question: str, user_id: str, session_id: str) -> str:
     try:
         rows = execute_query(safe_sql, {})
     except Exception as e:
+        logger.error(f"[SQL 실행 오류] sql={safe_sql!r} error={e}", exc_info=True)
         return f"데이터 조회 중 오류가 발생했습니다: {str(e)}"
 
     logger.info(f"[SQL 결과] {len(rows)}행 반환")
@@ -143,6 +144,7 @@ async def run_stream(question: str, user_id: str, session_id: str):
     try:
         rows = execute_query(safe_sql, {})
     except Exception as e:
+        logger.error(f"[SQL 실행 오류] sql={safe_sql!r} error={e}", exc_info=True)
         yield {"event": "token", "text": f"데이터 조회 중 오류가 발생했습니다: {str(e)}"}
         return
 

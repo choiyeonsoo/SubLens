@@ -67,8 +67,8 @@
     <h1>SUBLENS 데이터베이스 명세서</h1>
     <p class="meta">
       프로젝트: SUBLENS (SaaS 기반 구독 관리 플랫폼)<br />
-      DB: PostgreSQL 16 &nbsp;|&nbsp; ORM: Hibernate 6.6 (ddl-auto: update)<br />
-      작성일: 2026-03-19 &nbsp;|&nbsp; 버전: 1.0
+      DB: PostgreSQL 16 (Supabase 호스팅) &nbsp;|&nbsp; ORM: Hibernate 6.6 (ddl-auto: update)<br />
+      작성일: 2026-03-19 &nbsp;|&nbsp; 버전: 2.0 (2026-04-07 갱신 — 실제 스키마 반영)
     </p>
 
     <div class="toc">
@@ -79,6 +79,8 @@
         <li>3. <a href="#s3">테이블 상세 명세</a></li>
         <li>&nbsp;&nbsp;3.1 users &nbsp;|&nbsp; 3.2 subscriptions &nbsp;|&nbsp; 3.3 subscription_categories</li>
         <li>&nbsp;&nbsp;3.4 service_categories &nbsp;|&nbsp; 3.5 subscription_services</li>
+        <li>&nbsp;&nbsp;3.6 bundle_catalog &nbsp;|&nbsp; 3.7 bundle_option &nbsp;|&nbsp; 3.8 bundle_price_history</li>
+        <li>&nbsp;&nbsp;3.9 document_chunk &nbsp;|&nbsp; 3.10 ai_sessions</li>
         <li>4. <a href="#s4">Enum 타입 정의</a></li>
         <li>5. <a href="#s5">DDL 스크립트</a></li>
         <li>6. <a href="#s6">운영 참고사항</a></li>
@@ -94,6 +96,11 @@
       <tr><td><code>subscription_categories</code></td><td>SubscriptionCategory</td><td>사용자 정의 구독 분류</td><td>소량 (카테고리)</td></tr>
       <tr><td><code>service_categories</code></td><td>ServiceCategory</td><td>서비스 카탈로그 분류 (시스템)</td><td>소량 (고정)</td></tr>
       <tr><td><code>subscription_services</code></td><td>ServiceCatalog</td><td>등록된 구독 서비스 목록 (시스템)</td><td>수십~수백 (고정)</td></tr>
+      <tr><td><code>bundle_catalog</code></td><td>—</td><td>통신사 번들 상품 카탈로그 (크롤링/수동 입력)</td><td>수십~수백 (갱신형)</td></tr>
+      <tr><td><code>bundle_option</code></td><td>—</td><td>번들 상품 내 선택 옵션 상세</td><td>bundle_catalog × 옵션 수</td></tr>
+      <tr><td><code>bundle_price_history</code></td><td>—</td><td>번들 가격 변동 이력</td><td>누적</td></tr>
+      <tr><td><code>document_chunk</code></td><td>—</td><td>RAG용 문서 청크 + 벡터 임베딩</td><td>PDF 청크 수</td></tr>
+      <tr><td><code>ai_sessions</code></td><td>—</td><td>AI 대화 세션 영구 저장 (Supabase)</td><td>사용자 × 세션 수</td></tr>
     </table>
 
     <!-- ================================================================== -->
@@ -311,6 +318,10 @@
         <td><code>updated_at</code></td>
         <td>updatedAt</td><td>TIMESTAMP</td><td>nullable</td><td>@PreUpdate</td><td>수정일시</td>
       </tr>
+      <tr>
+        <td><code>mobile_carrier</code></td>
+        <td>mobileCarrier</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>—</td><td>통신사 (SKT / SKT 알뜰폰 / KT / KT 알뜰폰 / LG U+ / LG U+ 알뜰폰)</td>
+      </tr>
     </table>
 
     <hr class="section-divider" />
@@ -370,6 +381,30 @@
       <tr>
         <td><code>notify_days_before</code></td>
         <td>notifyDaysBefore</td><td>SMALLINT</td><td>NOT NULL</td><td>3</td><td>갱신 N일 전 알림 (1~30)</td>
+      </tr>
+      <tr>
+        <td><code>billing_day_of_month</code></td>
+        <td>billingDayOfMonth</td><td>INTEGER</td><td>nullable</td><td>NULL</td><td>월 결제일 (1~31). MONTHLY 주기에 사용</td>
+      </tr>
+      <tr>
+        <td><code>billing_day_of_week</code></td>
+        <td>billingDayOfWeek</td><td>INTEGER</td><td>nullable</td><td>NULL</td><td>주 결제 요일 (1=월~7=일). WEEKLY 주기에 사용</td>
+      </tr>
+      <tr>
+        <td><code>billing_date_of_year</code></td>
+        <td>billingDateOfYear</td><td>VARCHAR(4)</td><td>nullable</td><td>NULL</td><td>연 결제 날짜 (MMDD 형식). YEARLY 주기에 사용</td>
+      </tr>
+      <tr>
+        <td><code>service_id</code> <span class="tag tag-fk">FK</span></td>
+        <td>serviceId</td><td>UUID</td><td>nullable</td><td>NULL</td><td>subscription_services.id 참조</td>
+      </tr>
+      <tr>
+        <td><code>bundle_id</code> <span class="tag tag-fk">FK</span></td>
+        <td>bundleId</td><td>UUID</td><td>nullable</td><td>NULL</td><td>bundle_catalog.id 참조 (ON DELETE SET NULL)</td>
+      </tr>
+      <tr>
+        <td><code>is_bundle</code></td>
+        <td>isBundle</td><td>BOOLEAN</td><td>NOT NULL</td><td>false</td><td>번들 상품 여부 (true면 bundle_id 필수)</td>
       </tr>
       <tr>
         <td><code>created_at</code></td>
@@ -472,6 +507,100 @@
       → <code>https://www.google.com/s2/favicons?domain={logoDomain}&amp;sz=64</code>
     </div>
 
+    <hr class="section-divider" />
+
+    <h3>3.6 bundle_catalog</h3>
+    <p>크롤러 또는 수동 입력으로 관리되는 통신사 번들 상품 카탈로그. AI 타입 3·4가 참조합니다.</p>
+    <table>
+      <tr><th>컬럼명</th><th>타입</th><th>제약조건</th><th>기본값</th><th>설명</th></tr>
+      <tr><td><code>id</code> <span class="tag tag-pk">PK</span></td><td>UUID</td><td>NOT NULL</td><td>gen_random_uuid()</td><td>번들 고유 ID</td></tr>
+      <tr><td><code>provider</code></td><td>VARCHAR(100)</td><td>NOT NULL</td><td>—</td><td>통신사 (LG U+, SKT, KT, NAVER, COUPANG)</td></tr>
+      <tr><td><code>provider_url</code></td><td>TEXT</td><td>nullable</td><td>NULL</td><td>통신사 상품 페이지 URL</td></tr>
+      <tr><td><code>plan_name</code></td><td>VARCHAR(100)</td><td>NOT NULL</td><td>—</td><td>상품명 (예: 유독 컴팩트)</td></tr>
+      <tr><td><code>plan_url</code></td><td>TEXT</td><td>nullable</td><td>NULL</td><td>상품 상세 페이지 URL</td></tr>
+      <tr><td><code>description</code></td><td>TEXT</td><td>nullable</td><td>NULL</td><td>상품 설명</td></tr>
+      <tr><td><code>includes</code></td><td>TEXT[]</td><td>NOT NULL</td><td>—</td><td>포함 서비스 목록 (예: {넷플릭스, 유튜브프리미엄})</td></tr>
+      <tr><td><code>service_ids</code></td><td>UUID[]</td><td>nullable</td><td>NULL</td><td>subscription_services.id 배열 (선택 연결)</td></tr>
+      <tr><td><code>base_price</code></td><td>INTEGER</td><td>NOT NULL</td><td>—</td><td>기본 가격 (원)</td></tr>
+      <tr><td><code>original_price</code></td><td>INTEGER</td><td>nullable</td><td>NULL</td><td>정가 (할인 표시용)</td></tr>
+      <tr><td><code>discount_rate</code></td><td>INTEGER</td><td>nullable</td><td>NULL</td><td>할인율 (%)</td></tr>
+      <tr><td><code>contract_months</code></td><td>INTEGER</td><td>nullable</td><td>NULL</td><td>약정 개월 수 (NULL = 무약정)</td></tr>
+      <tr><td><code>telecom_exclusive</code></td><td>VARCHAR(50)</td><td>nullable</td><td>NULL</td><td>전용 통신사 (SKT/KT/LG U+, NULL = 누구나 가입 가능)</td></tr>
+      <tr><td><code>has_options</code></td><td>BOOLEAN</td><td>NOT NULL</td><td>false</td><td>선택 옵션 존재 여부 (bundle_option 참조)</td></tr>
+      <tr><td><code>is_active</code></td><td>BOOLEAN</td><td>NOT NULL</td><td>true</td><td>활성 여부</td></tr>
+      <tr><td><code>crawled_at</code></td><td>TIMESTAMP</td><td>NOT NULL</td><td>now()</td><td>마지막 크롤링 시각</td></tr>
+      <tr><td><code>created_at</code></td><td>TIMESTAMP</td><td>NOT NULL</td><td>now()</td><td>등록일시</td></tr>
+      <tr><td><code>updated_at</code></td><td>TIMESTAMP</td><td>nullable</td><td>NULL</td><td>수정일시</td></tr>
+    </table>
+    <div class="note">
+      <strong>인덱스:</strong> <code>provider</code> (btree), <code>is_active</code> (btree), <code>includes</code> (GIN — 배열 검색)
+    </div>
+
+    <hr class="section-divider" />
+
+    <h3>3.7 bundle_option</h3>
+    <p>번들 상품의 선택 옵션 (예: 데이터 추가, 프리미엄 등급 업그레이드).</p>
+    <table>
+      <tr><th>컬럼명</th><th>타입</th><th>제약조건</th><th>기본값</th><th>설명</th></tr>
+      <tr><td><code>id</code> <span class="tag tag-pk">PK</span></td><td>UUID</td><td>NOT NULL</td><td>gen_random_uuid()</td><td>옵션 고유 ID</td></tr>
+      <tr><td><code>bundle_id</code> <span class="tag tag-fk">FK</span></td><td>UUID</td><td>NOT NULL</td><td>—</td><td>bundle_catalog.id 참조 (ON DELETE CASCADE)</td></tr>
+      <tr><td><code>option_name</code></td><td>VARCHAR(200)</td><td>NOT NULL</td><td>—</td><td>옵션명</td></tr>
+      <tr><td><code>option_spec</code></td><td>VARCHAR(300)</td><td>nullable</td><td>NULL</td><td>옵션 상세 스펙</td></tr>
+      <tr><td><code>extra_price</code></td><td>INTEGER</td><td>NOT NULL</td><td>0</td><td>기본가 대비 추가 비용 (원)</td></tr>
+      <tr><td><code>total_price</code></td><td>INTEGER</td><td>NOT NULL</td><td>—</td><td>옵션 선택 시 총 가격 (원)</td></tr>
+      <tr><td><code>is_active</code></td><td>BOOLEAN</td><td>NOT NULL</td><td>true</td><td>활성 여부</td></tr>
+      <tr><td><code>created_at</code></td><td>TIMESTAMP</td><td>NOT NULL</td><td>now()</td><td>등록일시</td></tr>
+    </table>
+    <div class="note">
+      <strong>유니크:</strong> <code>(bundle_id, option_name)</code> — 동일 번들 내 옵션명 중복 불가
+    </div>
+
+    <hr class="section-divider" />
+
+    <h3>3.8 bundle_price_history</h3>
+    <p>번들 가격 변동 이력. 크롤러가 가격 변경 감지 시 기록합니다.</p>
+    <table>
+      <tr><th>컬럼명</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+      <tr><td><code>id</code> <span class="tag tag-pk">PK</span></td><td>UUID</td><td>NOT NULL</td><td>이력 고유 ID</td></tr>
+      <tr><td><code>bundle_id</code> <span class="tag tag-fk">FK</span></td><td>UUID</td><td>NOT NULL</td><td>bundle_catalog.id 참조 (ON DELETE CASCADE)</td></tr>
+      <tr><td><code>old_price</code></td><td>INTEGER</td><td>NOT NULL</td><td>변경 전 가격</td></tr>
+      <tr><td><code>new_price</code></td><td>INTEGER</td><td>NOT NULL</td><td>변경 후 가격</td></tr>
+      <tr><td><code>change_reason</code></td><td>VARCHAR(100)</td><td>nullable</td><td>변경 사유</td></tr>
+      <tr><td><code>changed_at</code></td><td>TIMESTAMP</td><td>NOT NULL</td><td>가격 변경 일시 (기본값: now())</td></tr>
+    </table>
+
+    <hr class="section-divider" />
+
+    <h3>3.9 document_chunk</h3>
+    <p>RAG(타입 2) 검색을 위한 문서 청크 및 벡터 임베딩 저장. <code>ingest.py</code>로 관리됩니다.</p>
+    <table>
+      <tr><th>컬럼명</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+      <tr><td><code>id</code> <span class="tag tag-pk">PK</span></td><td>UUID</td><td>NOT NULL</td><td>청크 고유 ID</td></tr>
+      <tr><td><code>source</code></td><td>VARCHAR(100)</td><td>NOT NULL</td><td>출처 문서명 (예: sublens_guide)</td></tr>
+      <tr><td><code>source_id</code></td><td>UUID</td><td>nullable</td><td>출처 문서 참조 ID</td></tr>
+      <tr><td><code>content</code></td><td>TEXT</td><td>NOT NULL</td><td>청크 텍스트 내용</td></tr>
+      <tr><td><code>embedding</code></td><td>vector</td><td>nullable</td><td>768차원 벡터 (sentence-transformers)</td></tr>
+      <tr><td><code>created_at</code></td><td>TIMESTAMP</td><td>NOT NULL</td><td>등록일시</td></tr>
+    </table>
+    <div class="note">
+      <strong>인덱스:</strong> <code>embedding</code> (ivfflat, vector_cosine_ops, lists=100) — 벡터 근사 최근접 이웃 검색<br />
+      <strong>참고:</strong> 현재 AI 서비스는 ChromaDB(로컬)를 primary로 사용하며, 이 테이블은 Supabase 측 백업/대안 저장소입니다.
+    </div>
+
+    <hr class="section-divider" />
+
+    <h3>3.10 ai_sessions</h3>
+    <p>AI 대화 세션의 영구 저장소 (Supabase). Redis TTL 만료 이전에 중요 세션을 영속화하는 용도입니다.</p>
+    <table>
+      <tr><th>컬럼명</th><th>타입</th><th>제약조건</th><th>설명</th></tr>
+      <tr><td><code>id</code> <span class="tag tag-pk">PK</span></td><td>UUID</td><td>NOT NULL</td><td>세션 고유 ID</td></tr>
+      <tr><td><code>user_id</code> <span class="tag tag-fk">FK</span></td><td>UUID</td><td>NOT NULL</td><td>users.id 참조</td></tr>
+      <tr><td><code>title</code></td><td>VARCHAR(100)</td><td>NOT NULL</td><td>세션 제목 (첫 질문 앞 40자)</td></tr>
+      <tr><td><code>messages</code></td><td>JSONB</td><td>NOT NULL</td><td>대화 메시지 배열 (기본값: [])</td></tr>
+      <tr><td><code>created_at</code></td><td>TIMESTAMP</td><td>nullable</td><td>생성일시</td></tr>
+      <tr><td><code>updated_at</code></td><td>TIMESTAMP</td><td>nullable</td><td>수정일시</td></tr>
+    </table>
+
     <!-- ================================================================== -->
     <h2 id="s4">4. Enum 타입 정의</h2>
     <p>모든 Enum은 <code>@Enumerated(EnumType.STRING)</code>으로 저장됩니다.</p>
@@ -514,14 +643,15 @@
     <p>Hibernate <code>ddl-auto: update</code>가 자동 관리하지만, 초기 구성 참조용입니다.</p>
     <pre><code>-- users
 CREATE TABLE users (
-    id           UUID PRIMARY KEY,
-    email        VARCHAR NOT NULL UNIQUE,
-    password_hash VARCHAR NOT NULL,
-    name         VARCHAR NOT NULL,
-    phone_number VARCHAR,
-    role         VARCHAR NOT NULL DEFAULT 'USER',
-    created_at   TIMESTAMP NOT NULL,
-    updated_at   TIMESTAMP
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email           VARCHAR(255) NOT NULL UNIQUE,
+    password_hash   VARCHAR(255) NOT NULL,
+    name            VARCHAR(255) NOT NULL,
+    phone_number    VARCHAR(255),
+    role            VARCHAR(255) DEFAULT 'USER',
+    mobile_carrier  VARCHAR(255) NOT NULL,  -- SKT / SKT 알뜰폰 / KT / KT 알뜰폰 / LG U+ / LG U+ 알뜰폰
+    created_at      TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMP
 );
 
 -- subscription_categories
@@ -535,21 +665,27 @@ CREATE TABLE subscription_categories (
 
 -- subscriptions
 CREATE TABLE subscriptions (
-    id                  UUID PRIMARY KEY,
-    user_id             UUID NOT NULL,
-    category_id         UUID REFERENCES subscription_categories(id),
-    service_name        VARCHAR(100) NOT NULL,
-    description         TEXT,
-    amount              NUMERIC(12,2) NOT NULL,
-    currency            VARCHAR(10) NOT NULL DEFAULT 'KRW',
-    billing_cycle       VARCHAR(10) NOT NULL DEFAULT 'MONTHLY',
-    start_date          DATE,
-    next_billing_date   DATE NOT NULL,
-    status              VARCHAR(10) NOT NULL DEFAULT 'ACTIVE',
-    notify_before       BOOLEAN NOT NULL DEFAULT TRUE,
-    notify_days_before  SMALLINT NOT NULL DEFAULT 3,
-    created_at          TIMESTAMP NOT NULL,
-    updated_at          TIMESTAMP
+    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id               UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category_id           UUID REFERENCES subscription_categories(id) ON DELETE SET NULL,
+    service_id            UUID REFERENCES subscription_services(id),
+    bundle_id             UUID REFERENCES bundle_catalog(id) ON DELETE SET NULL,
+    service_name          VARCHAR(100) NOT NULL,
+    description           TEXT,
+    amount                NUMERIC(12,2) NOT NULL,
+    currency              VARCHAR(10) NOT NULL DEFAULT 'KRW',
+    billing_cycle         VARCHAR(10) NOT NULL DEFAULT 'MONTHLY',
+    start_date            DATE DEFAULT now(),
+    next_billing_date     DATE NOT NULL,
+    billing_day_of_month  INTEGER,
+    billing_day_of_week   INTEGER,
+    billing_date_of_year  VARCHAR(4),
+    status                VARCHAR(10) NOT NULL DEFAULT 'ACTIVE',
+    is_bundle             BOOLEAN NOT NULL DEFAULT FALSE,
+    notify_before         BOOLEAN NOT NULL DEFAULT TRUE,
+    notify_days_before    SMALLINT NOT NULL DEFAULT 3,
+    created_at            TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at            TIMESTAMP
 );
 
 -- service_categories
@@ -561,13 +697,82 @@ CREATE TABLE service_categories (
 
 -- subscription_services
 CREATE TABLE subscription_services (
-    id            UUID PRIMARY KEY,
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name          VARCHAR(100) NOT NULL,
     category_id   UUID NOT NULL REFERENCES service_categories(id),
     logo_domain   VARCHAR(100) NOT NULL,
     display_order INTEGER NOT NULL,
     is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at    TIMESTAMP NOT NULL
+    created_at    TIMESTAMP NOT NULL DEFAULT now()
+);
+
+-- bundle_catalog
+CREATE TABLE bundle_catalog (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    provider         VARCHAR(100) NOT NULL,
+    provider_url     TEXT,
+    plan_name        VARCHAR(100) NOT NULL,
+    plan_url         TEXT,
+    description      TEXT,
+    includes         TEXT[] NOT NULL,
+    service_ids      UUID[],
+    base_price       INTEGER NOT NULL,
+    original_price   INTEGER,
+    discount_rate    INTEGER,
+    contract_months  INTEGER,
+    telecom_exclusive VARCHAR(50),
+    has_options      BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active        BOOLEAN NOT NULL DEFAULT TRUE,
+    crawled_at       TIMESTAMP NOT NULL DEFAULT now(),
+    created_at       TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at       TIMESTAMP
+);
+CREATE INDEX idx_bundle_catalog_provider   ON bundle_catalog USING btree (provider);
+CREATE INDEX idx_bundle_catalog_is_active  ON bundle_catalog USING btree (is_active);
+CREATE INDEX idx_bundle_catalog_includes   ON bundle_catalog USING gin  (includes);
+
+-- bundle_option
+CREATE TABLE bundle_option (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bundle_id    UUID NOT NULL REFERENCES bundle_catalog(id) ON DELETE CASCADE,
+    option_name  VARCHAR(200) NOT NULL,
+    option_spec  VARCHAR(300),
+    extra_price  INTEGER NOT NULL DEFAULT 0,
+    total_price  INTEGER NOT NULL,
+    is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at   TIMESTAMP NOT NULL DEFAULT now(),
+    UNIQUE (bundle_id, option_name)
+);
+
+-- bundle_price_history
+CREATE TABLE bundle_price_history (
+    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bundle_id      UUID NOT NULL REFERENCES bundle_catalog(id) ON DELETE CASCADE,
+    old_price      INTEGER NOT NULL,
+    new_price      INTEGER NOT NULL,
+    change_reason  VARCHAR(100),
+    changed_at     TIMESTAMP NOT NULL DEFAULT now()
+);
+
+-- document_chunk (RAG용 벡터 임베딩 — pgvector 확장 필요)
+CREATE TABLE document_chunk (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source     VARCHAR(100) NOT NULL,
+    source_id  UUID,
+    content    TEXT NOT NULL,
+    embedding  vector,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_document_chunk_embedding ON document_chunk USING ivfflat (embedding vector_cosine_ops) WITH (lists='100');
+
+-- ai_sessions
+CREATE TABLE ai_sessions (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID NOT NULL REFERENCES users(id),
+    title      VARCHAR(100) NOT NULL,
+    messages   JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
 );</code></pre>
 
     <!-- ================================================================== -->
@@ -581,11 +786,20 @@ CREATE TABLE subscription_services (
     </ul>
 
     <h3>6.2 Redis 데이터 (비관계형)</h3>
+    <p><strong>인증 관련 (Spring Boot 백엔드)</strong></p>
     <table>
       <tr><th>키 패턴</th><th>값</th><th>TTL</th><th>관련 테이블</th></tr>
       <tr><td><code>refresh:{userId}</code></td><td>Refresh JWT</td><td>24시간</td><td>users.id</td></tr>
       <tr><td><code>reset:user:{userId}</code></td><td>Reset Token UUID</td><td>10분</td><td>users.id</td></tr>
       <tr><td><code>reset:token:{token}</code></td><td>userId</td><td>10분</td><td>users.id</td></tr>
+    </table>
+    <p><strong>AI 서비스 (FastAPI)</strong></p>
+    <table>
+      <tr><th>키 패턴</th><th>값</th><th>TTL</th><th>용도</th></tr>
+      <tr><td><code>conv:{userId}:{sessionId}</code></td><td>JSON 배열 (대화 이력, 최대 20개 메시지)</td><td>2시간</td><td>모든 타입 대화 컨텍스트</td></tr>
+      <tr><td><code>calc:{userId}:{sessionId}</code></td><td>JSON 객체 (타입 4 최적화 계산 결과)</td><td>2시간</td><td>팔로업 질문 시 재계산 방지</td></tr>
+      <tr><td><code>sessions:{userId}</code></td><td>Sorted Set (sessionId → 최근접근 timestamp)</td><td>2시간</td><td>사용자 세션 목록 최신순 정렬</td></tr>
+      <tr><td><code>sessmeta:{userId}:{sessionId}</code></td><td>JSON 객체 (id, title, createdAt, updatedAt)</td><td>2시간</td><td>세션 메타데이터 (제목 등)</td></tr>
     </table>
 
     <h3>6.3 인덱스 권장 사항</h3>
@@ -599,7 +813,7 @@ CREATE TABLE subscription_services (
 
     <hr style="margin-top: 40px" />
     <p style="text-align: center; color: #999; font-size: 9pt">
-      SUBLENS Database Specification v1.0 &nbsp;|&nbsp; 2026-03-19
+      SUBLENS Database Specification v2.0 &nbsp;|&nbsp; 2026-04-07
     </p>
   </body>
 </html>

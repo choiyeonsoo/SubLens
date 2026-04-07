@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 from db import execute_query
 
-from agents.type4_calculator import calculate_optimization, _normalize_includes, _name_matches_includes, _matches_bundle, _to_monthly
+from agents.type4_calculator import calculate_optimization, _normalize_includes, _name_matches_includes, _matches_bundle, _to_monthly, _ALIAS_LOOKUP
 import memory as mem
 
 load_dotenv()
@@ -19,20 +19,65 @@ _async_client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 _HYPOTHETICAL_KEYWORDS = [
     "추가하면", "추가할 경우", "추가하게 되면", "추가했을 때",
-    "가입하면", "가입할 경우", "가입하게 되면",
-    "구독하면", "구독할 경우", "넣으면", "등록하면",
-    "시작하면", "시작할 경우", "시작하게 되면",
+    "추가한다면", "추가했다면", "추가하게 된다면",
+    "가입하면", "가입할 경우", "가입하게 되면", "가입한다면", "가입했다면",
+    "구독하면", "구독할 경우", "구독한다면", "넣으면", "등록하면",
+    "시작하면", "시작할 경우", "시작하게 되면", "시작한다면",
     "묶으면", "결합하면", "추가되면", "추가될 경우", "추가되게 되면", "추가될 때",
     "통합하면", "통합할 경우", "통합하게 되면", "통합될 때",
     "합치면", "합칠 경우", "합치게 되면", "합쳐질 때",
+    "바꾸면", "바꿀 경우", "바꾸게 되면", "바꿨을 때", "바꾼다면",
+    "전환하면", "전환할 경우", "전환하게 되면", "전환한다면",
+    "변경하면", "변경할 경우", "변경하게 되면", "변경한다면",
+]
+
+_CANCELLATION_KEYWORDS = [
+    "해지하면", "해지할 경우", "해지하게 되면", "해지했을 때",
+    "취소하면", "취소할 경우", "취소하게 되면", "취소했을 때",
+    "끊으면", "끊을 경우", "없애면", "없앨 경우",
+    "빼면", "빼고", "제거하면", "제거할 경우",
+    "안 쓰면", "안쓰면", "지우면", "해제하면", "탈퇴하면",
 ]
 
 # Claude's only job: determine view_type + write summary + cautions (Korean).
 # All numbers are pre-calculated by Python and must not be changed.
 _CAUTION_SYSTEM_PROMPT = """\
-당신은 구독 최적화 AI입니다. 사용자 질문의 의도를 파악해 아래 세 가지 중 하나로 응답하세요.
+당신은 구독 최적화 AI입니다. 사용자 질문의 의도를 파악해 아래 네 가지 중 하나로 응답하세요.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[케이스 0] 구독 해지/제거 시뮬레이션
+  - 판단 기준: [해지 시뮬레이션 계산 결과] 섹션이 제공된 경우, 또는
+    "~해지하면", "~취소하면", "~빼면", "~끊으면" 등 현재 구독을 제거하는 시뮬레이션 질문
+  - 처리 방법: [해지 시뮬레이션 계산 결과]를 바탕으로 설명
+    1. 해지 대상 구독명과 월간 절약액 명시
+    2. 변경 전/후 월 총액 비교
+    3. 연간 절약액 제시 (월간 × 12)
+    4. 숫자는 [해지 시뮬레이션 계산 결과]에서 그대로 사용, 변경 금지
+    5. 해지 대상이 현재 구독에 없으면 "해당 구독이 등록되어 있지 않습니다"로 안내
+  - 출력: view_type = "simple"
+  {
+    "view_type": "simple",
+    "answer": "해지 시뮬레이션 결과 설명 (현재 총액, 해지 후 총액, 월간/연간 절약액 명시)",
+    "supporting_data": "해지 대상 구독명과 각 금액",
+    "summary": "결과 1~2문장 요약",
+    "cautions": ["주의사항1", ...]
+  }
+
+[케이스 0-B] 복합 시뮬레이션 (해지 + 번들 전환)
+  - 판단 기준: [복합 시뮬레이션 계산 결과] 섹션이 제공된 경우
+  - 처리 방법: [복합 시뮬레이션 계산 결과]를 바탕으로 설명
+    1. 해지 대상 구독 + 추가 번들 조합 설명
+    2. 현재 총액 → 변경 후 총액 → 월간/연간 총 절약액
+    3. 숫자는 계산 결과에서 그대로 사용, 변경 금지
+  - 출력: view_type = "simple"
+  {
+    "view_type": "simple",
+    "answer": "복합 시뮬레이션 결과 설명 (해지 내역, 번들 전환 내역, 최종 절약액 명시)",
+    "supporting_data": "해지 구독 목록과 금액, 번들 정보",
+    "summary": "결과 1~2문장 요약",
+    "cautions": ["주의사항1", ...]
+  }
+
 [케이스 1] 서비스 전환/비교 질문
   - 판단 기준: "만약 ~로 바꾼다면", "~대신 ~쓰면", "~이 더 나아?" 등 현재 구독 서비스를 다른 서비스로 교체하는 가격 비교 질문
   - 처리 방법:
@@ -92,6 +137,110 @@ _CAUTION_SYSTEM_PROMPT = """\
 _NUMBER_FIELDS = ("current_total", "optimized_total", "savings")
 
 
+def _find_cancellation_targets(question: str, subscriptions: list[dict]) -> list[dict]:
+    """
+    해지/취소 관련 키워드가 있을 때 사용자가 제거하려는 구독을 식별한다.
+    서비스명을 공백 제거 후 질문에서 탐색하고, 별칭 테이블도 참조한다.
+    """
+    if not any(kw in question for kw in _CANCELLATION_KEYWORDS):
+        return []
+
+    q_nospace = question.lower().replace(" ", "")
+    targets = []
+    seen: set[str] = set()
+
+    for s in subscriptions:
+        name = s["service_name"]
+        if name in seen:
+            continue
+        name_lower = name.lower()
+        name_nospace = name_lower.replace(" ", "")
+
+        matched = len(name_nospace) >= 2 and name_nospace in q_nospace
+        if not matched:
+            for alias in _ALIAS_LOOKUP.get(name_lower, []):
+                alias_ns = alias.replace(" ", "")
+                if len(alias_ns) >= 2 and alias_ns in q_nospace:
+                    matched = True
+                    break
+
+        if matched:
+            targets.append(s)
+            seen.add(name)
+            logger.info(f"[type4] 해지 대상 감지: {name} ({s.get('_monthly', 0)}원)")
+
+    return targets
+
+
+def _calculate_cancellation(targets: list[dict], current_total: int) -> dict:
+    """해지 시뮬레이션: 대상 구독 제거 후 비용 변화를 계산한다."""
+    cancel_cost = sum(s["_monthly"] for s in targets)
+    new_total = current_total - cancel_cost
+    return {
+        "scenario": "cancellation",
+        "cancelled_subscriptions": [
+            {"name": s["service_name"], "price": s["_monthly"]} for s in targets
+        ],
+        "cancel_cost": cancel_cost,
+        "current_total": current_total,
+        "new_total": new_total,
+        "monthly_savings": cancel_cost,
+        "yearly_savings": cancel_cost * 12,
+    }
+
+
+def _calculate_combined(
+    cancel_targets: list[dict],
+    bundle: dict,
+    subscriptions: list[dict],
+    current_total: int,
+) -> dict:
+    """
+    복합 시뮬레이션: 지정 구독 해지 후 번들 추가 시 비용 변화를 계산한다.
+    1) 해지 대상 제거 → 잔여 구독 풀
+    2) 잔여 풀에서 번들이 대체 가능한 구독 계산
+    3) 최종 총액 = current - 해지비용 - 번들대체비용 + 번들가격
+    """
+    cancel_names = {s["service_name"] for s in cancel_targets}
+    cancel_cost = sum(s["_monthly"] for s in cancel_targets)
+    remaining = [s for s in subscriptions if s["service_name"] not in cancel_names]
+
+    includes = _normalize_includes(bundle.get("includes"))
+    bundle_price = int(bundle.get("base_price") or 0)
+    matched_in_remaining = [
+        s for s in remaining
+        if _matches_bundle(s["service_name"], includes, s.get("_canonical"))
+    ]
+    replaceable_cost = int(sum(s["_monthly"] for s in matched_in_remaining))
+    final_total = current_total - cancel_cost - replaceable_cost + bundle_price
+    total_savings = current_total - final_total
+
+    logger.info(
+        f"[type4] 복합 시뮬레이션: cancel={cancel_cost}, "
+        f"bundle={bundle['plan_name']} {bundle_price}, "
+        f"replaceable={replaceable_cost}, final={final_total}, savings={total_savings}"
+    )
+    return {
+        "scenario": "cancel_and_bundle",
+        "cancelled_subscriptions": [
+            {"name": s["service_name"], "price": s["_monthly"]} for s in cancel_targets
+        ],
+        "cancel_cost": cancel_cost,
+        "bundle_name": bundle["plan_name"],
+        "provider": bundle["provider"],
+        "bundle_price": bundle_price,
+        "bundle_replaces": [
+            {"name": s["service_name"], "price": s["_monthly"]} for s in matched_in_remaining
+        ],
+        "replaceable_cost": replaceable_cost,
+        "current_total": current_total,
+        "after_cancel_total": current_total - cancel_cost,
+        "final_total": final_total,
+        "total_monthly_savings": total_savings,
+        "total_yearly_savings": total_savings * 12,
+    }
+
+
 def _find_hypothetical_bundle(question: str, all_bundles: list[dict]) -> dict | None:
     """
     가상 시나리오 질문에서 언급된 번들을 순수 Python으로 식별 (Haiku 호출 제거).
@@ -127,8 +276,31 @@ def _find_hypothetical_bundle(question: str, all_bundles: list[dict]) -> dict | 
             best = b
 
     if best:
-        logger.info(f"[type4] 가상 번들 감지(Python): {best['plan_name']} (score={best_score})")
-    return best
+        logger.info(f"[type4] 가상 번들 감지(plan_name/provider): {best['plan_name']} (score={best_score})")
+        return best
+
+    # ── includes 폴백: 번들 이름이 아닌 포함 서비스명이 질문에 언급된 경우 ────
+    # 예: "지니뮤직 추가한다면" → 지니뮤직이 includes에 있는 번들을 찾음
+    q_nospace = q_lower.replace(" ", "")
+    includes_best: dict | None = None
+    includes_best_score = 0
+
+    for b in all_bundles:
+        includes = _normalize_includes(b.get("includes"))
+        score = 0
+        for inc in includes:
+            inc_ns = inc.lower().replace(" ", "")
+            if len(inc_ns) >= 3 and inc_ns in q_nospace:
+                score += len(inc_ns)
+        if score > includes_best_score:
+            includes_best_score = score
+            includes_best = b
+
+    if includes_best:
+        logger.info(
+            f"[type4] 가상 번들 감지(includes): {includes_best['plan_name']} (score={includes_best_score})"
+        )
+    return includes_best
 
 
 def _calculate_hypothetical(
@@ -307,16 +479,87 @@ async def run(question: str, user_id: str, session_id: str) -> dict:
     # 기존 번들이 이미 커버하는 서비스 목록
     existing_coverage = _build_existing_coverage(subscriptions, all_bundles)
 
-    # ── Step 2.5: 가상 시나리오 감지 (순수 Python, 즉시) ─────────────────────
-    # 가상 경로는 Haiku 정규화 불필요 → 바로 계산 후 early return
+    # ── Step 2.5: 시뮬레이션 감지 (순수 Python, 즉시) ───────────────────────
+    # 시뮬레이션 경로는 Haiku 정규화 불필요 → 바로 계산 후 early return
+
+    # _monthly 필드 사전 계산 (모든 시뮬레이션 경로에서 필요)
+    for s in subscriptions:
+        s["_monthly"] = _to_monthly(int(s.get("amount") or 0), s.get("billing_cycle", "MONTHLY"))
+        s.setdefault("_canonical", s["service_name"])
+    current_total = int(sum(s["_monthly"] for s in subscriptions))
+
+    cancel_targets = _find_cancellation_targets(question, subscriptions)
     hypo_bundle = _find_hypothetical_bundle(question, all_bundles)
+
+    if cancel_targets and hypo_bundle:
+        # ── 복합 시뮬레이션: 해지 + 번들 전환 ───────────────────────────────
+        combined = _calculate_combined(cancel_targets, hypo_bundle, subscriptions, current_total)
+        user_prompt = (
+            f"사용자 질문: {question}\n\n"
+            f"[복합 시뮬레이션 계산 결과 — 숫자 변경 금지]\n"
+            f"{json.dumps(combined, ensure_ascii=False, indent=2)}\n\n"
+            f"[사용자 현재 구독]\n"
+            f"{json.dumps([{'name': s['service_name'], 'monthly_price': s['_monthly']} for s in subscriptions], ensure_ascii=False)}"
+        )
+        history = mem.get_history(user_id, session_id)
+        response = _client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            temperature=0,
+            system=_CAUTION_SYSTEM_PROMPT,
+            messages=history + [{"role": "user", "content": user_prompt}],
+        )
+        raw = response.content[0].text.strip()
+        try:
+            claude_result = json.loads(raw)
+        except json.JSONDecodeError:
+            logger.warning(f"[type4] 복합 시뮬레이션 Claude JSON 파싱 실패: {raw[:200]}")
+            claude_result = {"view_type": "simple", "answer": raw, "summary": "", "cautions": []}
+        mem.append_turn(user_id, session_id, user_prompt, raw)
+        return {
+            "view_type": "simple",
+            "answer": claude_result.get("answer", ""),
+            "supporting_data": claude_result.get("supporting_data"),
+            "summary": claude_result.get("summary", ""),
+            "cautions": claude_result.get("cautions", []),
+        }
+
+    if cancel_targets:
+        # ── 해지 시뮬레이션 ───────────────────────────────────────────────────
+        cancellation = _calculate_cancellation(cancel_targets, current_total)
+        user_prompt = (
+            f"사용자 질문: {question}\n\n"
+            f"[해지 시뮬레이션 계산 결과 — 숫자 변경 금지]\n"
+            f"{json.dumps(cancellation, ensure_ascii=False, indent=2)}\n\n"
+            f"[사용자 현재 구독]\n"
+            f"{json.dumps([{'name': s['service_name'], 'monthly_price': s['_monthly']} for s in subscriptions], ensure_ascii=False)}"
+        )
+        history = mem.get_history(user_id, session_id)
+        response = _client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            temperature=0,
+            system=_CAUTION_SYSTEM_PROMPT,
+            messages=history + [{"role": "user", "content": user_prompt}],
+        )
+        raw = response.content[0].text.strip()
+        try:
+            claude_result = json.loads(raw)
+        except json.JSONDecodeError:
+            logger.warning(f"[type4] 해지 시뮬레이션 Claude JSON 파싱 실패: {raw[:200]}")
+            claude_result = {"view_type": "simple", "answer": raw, "summary": "", "cautions": []}
+        mem.append_turn(user_id, session_id, user_prompt, raw)
+        return {
+            "view_type": "simple",
+            "answer": claude_result.get("answer", ""),
+            "supporting_data": claude_result.get("supporting_data"),
+            "summary": claude_result.get("summary", ""),
+            "cautions": claude_result.get("cautions", []),
+        }
+
     if hypo_bundle:
-        for s in subscriptions:
-            s["_monthly"] = _to_monthly(int(s.get("amount") or 0), s.get("billing_cycle", "MONTHLY"))
-            s.setdefault("_canonical", s["service_name"])
-
-        hypo = _calculate_hypothetical(hypo_bundle, subscriptions, int(sum(s["_monthly"] for s in subscriptions)))
-
+        # ── 번들 추가 가상 시나리오 ───────────────────────────────────────────
+        hypo = _calculate_hypothetical(hypo_bundle, subscriptions, current_total)
         user_prompt = (
             f"사용자 질문: {question}\n\n"
             f"[가상 시나리오 계산 결과 — 숫자 변경 금지]\n"
@@ -338,7 +581,6 @@ async def run(question: str, user_id: str, session_id: str) -> dict:
         except json.JSONDecodeError:
             logger.warning(f"[type4] 가상 시나리오 Claude JSON 파싱 실패: {raw[:200]}")
             claude_result = {"view_type": "simple", "answer": raw, "summary": "", "cautions": []}
-
         mem.append_turn(user_id, session_id, user_prompt, raw)
         return {
             "view_type": "simple",
@@ -473,22 +715,32 @@ async def run_stream(question: str, user_id: str, session_id: str):
 
     existing_coverage = _build_existing_coverage(subscriptions, all_bundles)
 
+    # _monthly 필드 사전 계산
+    for s in subscriptions:
+        s["_monthly"] = _to_monthly(int(s.get("amount") or 0), s.get("billing_cycle", "MONTHLY"))
+        s.setdefault("_canonical", s["service_name"])
+    current_total = int(sum(s["_monthly"] for s in subscriptions))
+
+    cancel_targets = _find_cancellation_targets(question, subscriptions)
     hypo_bundle = _find_hypothetical_bundle(question, all_bundles)
-    if hypo_bundle:
-        yield {"event": "status", "text": "가상 시나리오 분석 중..."}
 
-        for s in subscriptions:
-            s["_monthly"] = _to_monthly(int(s.get("amount") or 0), s.get("billing_cycle", "MONTHLY"))
-            s.setdefault("_canonical", s["service_name"])
+    if cancel_targets or hypo_bundle:
+        yield {"event": "status", "text": "시뮬레이션 분석 중..."}
 
-        hypo = _calculate_hypothetical(
-            hypo_bundle, subscriptions, int(sum(s["_monthly"] for s in subscriptions))
-        )
+        if cancel_targets and hypo_bundle:
+            calc_data = _calculate_combined(cancel_targets, hypo_bundle, subscriptions, current_total)
+            section_label = "복합 시뮬레이션 계산 결과"
+        elif cancel_targets:
+            calc_data = _calculate_cancellation(cancel_targets, current_total)
+            section_label = "해지 시뮬레이션 계산 결과"
+        else:
+            calc_data = _calculate_hypothetical(hypo_bundle, subscriptions, current_total)
+            section_label = "가상 시나리오 계산 결과"
 
         user_prompt = (
             f"사용자 질문: {question}\n\n"
-            f"[가상 시나리오 계산 결과 — 숫자 변경 금지]\n"
-            f"{json.dumps(hypo, ensure_ascii=False, indent=2)}\n\n"
+            f"[{section_label} — 숫자 변경 금지]\n"
+            f"{json.dumps(calc_data, ensure_ascii=False, indent=2)}\n\n"
             f"[사용자 현재 구독]\n"
             f"{json.dumps([{'name': s['service_name'], 'monthly_price': s['_monthly']} for s in subscriptions], ensure_ascii=False)}"
         )
@@ -507,9 +759,10 @@ async def run_stream(question: str, user_id: str, session_id: str):
         try:
             claude_result = json.loads(raw)
         except json.JSONDecodeError:
-            logger.warning(f"[type4] 가상 시나리오 Claude JSON 파싱 실패: {raw[:200]}")
+            logger.warning(f"[type4] 시뮬레이션 Claude JSON 파싱 실패: {raw[:200]}")
             claude_result = {"view_type": "simple", "answer": raw, "summary": "", "cautions": []}
 
+        mem.append_turn(user_id, session_id, user_prompt, raw)
         yield {"event": "done", "answer": {
             "view_type": "simple",
             "answer": claude_result.get("answer", ""),

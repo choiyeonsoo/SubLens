@@ -73,3 +73,7 @@ Tokens are stored as **HttpOnly cookies** (`access_token`, `refresh_token`). The
 Docker Compose runs: `postgres:16`, `redis:7`, `backend` (8080→8081), `frontend` (3000), `nginx` (80). The `nginx/nginx.conf` proxies traffic.
 
 `ddl-auto: update` is active — schema changes in JPA entities are applied automatically on startup.
+
+### Database schema (reference)
+- **Canonical DDL dump (Supabase / Postgres):** `docs/database/schema.sql` — use for SQL, RLS, `auth`/`storage` questions, and anything beyond JPA entities. In Cursor, attach with `@docs/database/schema.sql` when the task touches the DB (the file is large; no need to attach for unrelated edits).
+- **Application-owned tables** are also reflected under `backend/...` JPA entities; if the dump and entities disagree, prefer the dump for the remote DB and align code or migrations intentionally.

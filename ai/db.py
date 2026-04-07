@@ -12,7 +12,7 @@ def execute_query(sql: str, params: dict) -> list[dict]:
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     try:
         with conn.cursor() as cur:
-            cur.execute(sql, params)
+            cur.execute(sql, params or None)
             return [dict(row) for row in cur.fetchall()]
     finally:
         conn.close()

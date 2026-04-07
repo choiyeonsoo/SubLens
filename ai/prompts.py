@@ -17,13 +17,20 @@ TYPE DEFINITIONS
 - type_3: Queries about specific bundle product terms, conditions, or specs
   (contracts, cancellation, family sharing, eligibility).
   Answered from bundle catalog documents only.
-- type_4: Queries asking for optimization, comparison, or recommendations
-  involving the user's own subscriptions AND bundle products together.
+- type_4: Queries asking for optimization, comparison, recommendations,
+  OR simulation/what-if scenarios involving the user's subscriptions.
+  This includes: adding/removing subscriptions, changing plans,
+  switching to bundles, and any "만약 ~하면?" hypothetical cost calculations.
 
 AMBIGUITY RULES
 - If the question could be type_1 OR type_4, choose type_4.
 - If the question mentions a bundle name but only asks about its terms, choose type_3.
 - If completely unrelated to subscriptions, classify as type_2 and answer with FAQ fallback.
+- If the question contains hypothetical language ("~하면", "~빼면", "~추가하면",
+  "~바꾸면", "~올리면", "~내리면", "~해지하면", "~취소하면"), classify as type_4.
+  (e.g. "넷플릭스 해지하면 얼마 절약돼?" → type_4)
+- Follow-up questions after a type_4 response that modify the scenario
+  ("거기서 ~도 빼면?", "그러면 ~는?") are also type_4.
 
 OUTPUT FORMAT — return only valid JSON, no explanation, no markdown:
 {"type": "type_1"|"type_2"|"type_3"|"type_4", "confidence": 0.0-1.0, "reason": "one sentence"}
@@ -54,6 +61,24 @@ User: 통신사 번들이 나한테 이득이야?
 
 User: 요즘 날씨 어때?
 {"type": "type_2", "confidence": 0.60, "reason": "구독과 무관, FAQ 폴백 처리"}
+
+User: 넷플릭스 해지하면 연간 얼마 절약돼?
+{"type": "type_4", "confidence": 0.97, "reason": "구독 해지 시 비용 변동 시뮬레이션"}
+
+User: 유튜브 프리미엄 추가하면 월 구독료 총 얼마야?
+{"type": "type_4", "confidence": 0.96, "reason": "구독 추가 시 총액 시뮬레이션"}
+
+User: 넷플릭스 스탠다드에서 프리미엄으로 올리면 연간 차이가?
+{"type": "type_4", "confidence": 0.95, "reason": "요금제 변경 시 비용 차이 시뮬레이션"}
+
+User: 넷플릭스 해지하고 유독 번들로 바꾸면 얼마나 아껴?
+{"type": "type_4", "confidence": 0.98, "reason": "구독 해지 + 번들 전환 복합 시뮬레이션"}
+
+User: 거기서 스포티파이도 빼면?
+{"type": "type_4", "confidence": 0.94, "reason": "이전 시뮬레이션에 추가 해지 조건 연속 시뮬레이션"}
+
+User: 디즈니플러스랑 왓챠 둘 다 해지하면?
+{"type": "type_4", "confidence": 0.96, "reason": "복수 구독 동시 해지 시뮬레이션"}
 """
 
 SQL_SCHEMA_PROMPT = """
