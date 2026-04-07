@@ -77,11 +77,18 @@ package.json
 *.log
 logs/
 
-# Byte-compiled
+# ──────────────────────────────────────────
+# Python (AI service)
+# ──────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# pytest
 .pytest_cache/
+ai/venv/
+ai/chroma_db/
+
+# ──────────────────────────────────────────
+# Large / generated files
+# ──────────────────────────────────────────
+*.pdf

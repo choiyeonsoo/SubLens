@@ -42,7 +42,7 @@ export const getCategories = async (): Promise<CategoryResponse[]> => {
   return response.data.data;
 };
 
-export const getBundles = async (provider: string): Promise<BundleItem[]> => {
-  const response = await api.get('/api/bundles', { params: { provider } });
+export const getBundles = async (provider?: string): Promise<BundleItem[]> => {
+  const response = await api.get('/api/bundles', { params: provider ? { provider } : {} });
   return response.data.data;
 };

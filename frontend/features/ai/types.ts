@@ -12,6 +12,8 @@ export interface RecommendedBundle {
   includes: string[];
   replaces: string[];
   telecom_exclusive: string | null;
+  has_options: boolean;
+  description: string;
   cautions: string[];
 }
 
@@ -28,6 +30,7 @@ export interface OptimizeData {
   current_subscriptions: CurrentSubscription[];
   recommended_bundles: RecommendedBundle[];
   keep_subscriptions: KeepSubscription[];
+  summary: string;
   cautions: string[];
 }
 
@@ -50,6 +53,8 @@ export interface SimpleData {
   view_type: "simple";
   answer: string;
   supporting_data: string | null;
+  summary?: string;
+  cautions?: string[];
 }
 
 export type AiResponse = OptimizeData | CompareData | SimpleData;

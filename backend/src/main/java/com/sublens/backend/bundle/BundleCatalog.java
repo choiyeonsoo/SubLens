@@ -37,13 +37,13 @@ public class BundleCatalog {
     private int basePrice;
 
     @Column(name = "original_price")
-    private int originalPrice;
+    private Integer originalPrice;
 
     @Column(name = "discount_rate")
-    private int discountRate;
+    private Integer discountRate;
 
     @Column(name = "contract_months")
-    private int contractMonths;
+    private Integer contractMonths;
 
     @Column(name = "telecom_exclusive", length = 50)
     private String telecomExclusive;

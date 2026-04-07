@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface BundleRepository extends JpaRepository<BundleCatalog, UUID> {
 
     List<BundleCatalog> findByProviderAndIsActiveTrue(String provider);
+
+    List<BundleCatalog> findByIsActiveTrue();
 }

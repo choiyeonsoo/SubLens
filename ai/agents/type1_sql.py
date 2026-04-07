@@ -95,7 +95,7 @@ async def run(question: str, user_id: str, session_id: str) -> str:
         return "조회된 구독 데이터가 없습니다."
 
     # Step 6: Generate natural language answer with conversation history
-    history = mem.get_history(session_id)
+    history = mem.get_history(user_id, session_id)
     messages = history + [
         {
             "role": "user",
@@ -110,3 +110,61 @@ async def run(question: str, user_id: str, session_id: str) -> str:
         messages=messages,
     )
     return answer_response.content[0].text.strip()
+
+
+_async_client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+
+async def run_stream(question: str, user_id: str, session_id: str):
+    """Streaming version — yields SSE event dicts."""
+    yield {"event": "status", "text": "데이터 쿼리 생성 중..."}
+
+    sql_response = await _async_client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=300,
+        temperature=0,
+        system=SQL_SCHEMA_PROMPT,
+        messages=[{"role": "user", "content": question}],
+    )
+    raw_sql = sql_response.content[0].text.strip()
+    raw_sql = re.sub(r"^```[a-zA-Z]*\n?", "", raw_sql)
+    raw_sql = re.sub(r"\n?```$", "", raw_sql).strip()
+    raw_sql = _fix_pg_syntax(raw_sql)
+
+    if not _is_safe_sql(raw_sql):
+        yield {"event": "token", "text": "보안 정책상 해당 요청을 처리할 수 없습니다."}
+        return
+
+    safe_sql = _inject_user_id(raw_sql, user_id)
+    logger.info(f"[SQL 생성] {safe_sql}")
+
+    yield {"event": "status", "text": "데이터 조회 중..."}
+
+    try:
+        rows = execute_query(safe_sql, {})
+    except Exception as e:
+        yield {"event": "token", "text": f"데이터 조회 중 오류가 발생했습니다: {str(e)}"}
+        return
+
+    logger.info(f"[SQL 결과] {len(rows)}행 반환")
+
+    if not rows:
+        yield {"event": "token", "text": "조회된 구독 데이터가 없습니다."}
+        return
+
+    history = mem.get_history(user_id, session_id)
+    messages = history + [
+        {
+            "role": "user",
+            "content": f"질문: {question}\n\nSQL 조회 결과:\n{rows}",
+        }
+    ]
+
+    async with _async_client.messages.stream(
+        model="claude-sonnet-4-20250514",
+        max_tokens=MAX_TOKENS_BY_TYPE["type_1"],
+        system="당신은 SUBLENS 구독 관리 도우미입니다. SQL 조회 결과를 바탕으로 사용자 질문에 친절하게 한국어로 답변해주세요.",
+        messages=messages,
+    ) as stream:
+        async for text in stream.text_stream:
+            yield {"event": "token", "text": text}

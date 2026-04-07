@@ -19,12 +19,11 @@ public class BundleController {
     private final BundleRepository bundleRepository;
 
     @GetMapping
-    public ApiResponse<List<BundleResponse>> list(@RequestParam String provider) {
-        List<BundleResponse> bundles = bundleRepository
-                .findByProviderAndIsActiveTrue(provider)
-                .stream()
-                .map(BundleResponse::from)
-                .toList();
+    public ApiResponse<List<BundleResponse>> list(
+            @RequestParam(required = false) String provider) {
+        List<BundleResponse> bundles = (provider == null || provider.isBlank())
+                ? bundleRepository.findByIsActiveTrue().stream().map(BundleResponse::from).toList()
+                : bundleRepository.findByProviderAndIsActiveTrue(provider).stream().map(BundleResponse::from).toList();
         return ApiResponse.success(bundles);
     }
 }

@@ -83,11 +83,10 @@ export const useCategories = () => {
   });
 };
 
-export function useBundles(provider: string) {
+export function useBundles(provider?: string) {
   return useQuery({
-    queryKey: ["bundles", provider],
+    queryKey: ["bundles", provider ?? ""],
     queryFn: () => getBundles(provider),
-    enabled: !!provider,
     staleTime: 1000 * 60 * 10, // 10분 캐시
   });
 }
