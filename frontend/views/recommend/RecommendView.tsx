@@ -2,15 +2,18 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Send, Bot, Plus, Trash2 } from "lucide-react";
+import { Sparkles, Send, Bot, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
+import AiResponseRenderer from "@/features/ai/components/AiResponseRenderer";
+import { AiResponse } from "@/features/ai/types";
 
-const AI_API_URL =
-  (process.env.NEXT_PUBLIC_AI_API_URL ?? "http://localhost:8001") + "/api/ai/query";
-
-const STORAGE_KEY = "sublens_ai_sessions";
-const MAX_SESSIONS = 20;
+const AI_BASE =
+  process.env.NEXT_PUBLIC_AI_API_URL ?? "http://localhost:8001";
+const AI_STREAM_URL = `${AI_BASE}/api/ai/query/stream`;
+const SESSIONS_URL = (userId: string) => `${AI_BASE}/api/ai/sessions/${userId}`;
+const SESSION_MSGS_URL = (userId: string, sid: string) =>
+  `${AI_BASE}/api/ai/sessions/${userId}/${sid}`;
 
 const QUICK_QUESTIONS = [
   "이번 달 구독료 총액이 얼마야?",
@@ -31,14 +34,14 @@ const TYPE_BADGE: Record<string, { label: string; className: string }> = {
 interface Message {
   id: string;
   role: "user" | "ai";
-  content: string;
+  content: string | AiResponse;
   query_type?: string;
+  status?: string;
 }
 
-interface Session {
+interface SessionMeta {
   id: string;
   title: string;
-  messages: Message[];
   createdAt: number;
   updatedAt: number;
 }
@@ -61,29 +64,30 @@ function parseMarkdown(text: string): { __html: string } {
 }
 
 function relativeDate(ts: number): string {
-  const diffMs = Date.now() - ts;
-  const diffDays = Math.floor(diffMs / 86_400_000);
+  const now = Date.now() / 1000;
+  const diffSec = now - ts;
+  const diffDays = Math.floor(diffSec / 86_400);
   if (diffDays === 0) return "오늘";
   if (diffDays === 1) return "어제";
   return `${diffDays}일 전`;
 }
 
-// ── localStorage helpers ───────────────────────────────────────────────────
-function loadSessions(): Session[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Session[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveSessions(sessions: Session[]): void {
-  // Keep latest MAX_SESSIONS only (sorted by updatedAt desc)
-  const trimmed = [...sessions]
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, MAX_SESSIONS);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+function redisToMessages(history: { role: string; content: string }[]): Message[] {
+  return history.map((h) => {
+    if (h.role === "user") {
+      return { id: uuid(), role: "user" as const, content: h.content };
+    }
+    let parsed: string | AiResponse = h.content;
+    try {
+      const obj = JSON.parse(h.content);
+      if (obj && typeof obj === "object" && ("view_type" in obj || "answer" in obj)) {
+        parsed = obj as AiResponse;
+      }
+    } catch {
+      /* plain text */
+    }
+    return { id: uuid(), role: "ai" as const, content: parsed };
+  });
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -91,7 +95,7 @@ export default function RecommendView() {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<SessionMeta[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -101,10 +105,24 @@ export default function RecommendView() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load sessions from localStorage on mount
+  // ── API helpers ──────────────────────────────────────────────────────────
+  const refreshSessions = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(SESSIONS_URL(user.id), { mode: "cors" });
+      if (res.ok) {
+        const data: SessionMeta[] = await res.json();
+        setSessions(data);
+      }
+    } catch {
+      /* silently ignore — sessions sidebar is non-critical */
+    }
+  }, [user]);
+
+  // Load sessions from API on mount
   useEffect(() => {
-    setSessions(loadSessions().sort((a, b) => b.updatedAt - a.updatedAt));
-  }, []);
+    refreshSessions();
+  }, [refreshSessions]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -124,60 +142,46 @@ export default function RecommendView() {
     inputRef.current?.focus();
   }, []);
 
-  const loadSession = useCallback((session: Session) => {
-    setActiveSessionId(session.id);
-    setMessages(session.messages);
-    setInput("");
-    inputRef.current?.focus();
-  }, []);
+  const loadSession = useCallback(
+    async (session: SessionMeta) => {
+      if (!user) return;
+      setActiveSessionId(session.id);
+      setMessages([]);
+      setInput("");
+      inputRef.current?.focus();
+
+      try {
+        const res = await fetch(SESSION_MSGS_URL(user.id, session.id), { mode: "cors" });
+        if (res.ok) {
+          const history = await res.json();
+          setMessages(redisToMessages(history));
+        }
+      } catch {
+        toast.error("대화 내역을 불러올 수 없습니다.");
+      }
+    },
+    [user],
+  );
 
   const deleteSession = useCallback(
-    (e: React.MouseEvent, sessionId: string) => {
+    async (e: React.MouseEvent, sessionId: string) => {
       e.stopPropagation();
-      setSessions((prev) => {
-        const next = prev.filter((s) => s.id !== sessionId);
-        saveSessions(next);
-        return next;
-      });
+      if (!user) return;
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
       if (activeSessionId === sessionId) {
         setActiveSessionId(null);
         setMessages([]);
       }
+      try {
+        await fetch(SESSION_MSGS_URL(user.id, sessionId), { method: "DELETE", mode: "cors" });
+      } catch {
+        /* best-effort delete */
+      }
     },
-    [activeSessionId],
+    [activeSessionId, user],
   );
 
-  // Persist messages to the active session
-  const persistMessages = useCallback(
-    (updatedMessages: Message[], sessionId: string, firstQuestion?: string) => {
-      setSessions((prev) => {
-        const existing = prev.find((s) => s.id === sessionId);
-        const now = Date.now();
-        let next: Session[];
-        if (existing) {
-          next = prev.map((s) =>
-            s.id === sessionId
-              ? { ...s, messages: updatedMessages, updatedAt: now }
-              : s,
-          );
-        } else {
-          const newSession: Session = {
-            id: sessionId,
-            title: (firstQuestion ?? "새 대화").slice(0, 30),
-            messages: updatedMessages,
-            createdAt: now,
-            updatedAt: now,
-          };
-          next = [newSession, ...prev];
-        }
-        saveSessions(next);
-        return next.sort((a, b) => b.updatedAt - a.updatedAt);
-      });
-    },
-    [],
-  );
-
-  // ── Send message ─────────────────────────────────────────────────────────
+  // ── Send message (SSE streaming) ─────────────────────────────────────────
   async function sendMessage(question: string) {
     const q = question.trim();
     if (!q || isLoading || !user) return;
@@ -185,24 +189,21 @@ export default function RecommendView() {
     setInput("");
     inputRef.current!.style.height = "44px";
 
-    // Determine or create session
-    const isFirstMessage = messages.length === 0;
     const currentSessionId = activeSessionId ?? uuid();
     if (!activeSessionId) setActiveSessionId(currentSessionId);
 
     const userMsg: Message = { id: uuid(), role: "user", content: q };
-    const nextMessages = [...messages, userMsg];
-    setMessages(nextMessages);
+    const aiMsgId = uuid();
+    const aiPlaceholder: Message = { id: aiMsgId, role: "ai", content: "" };
+
+    setMessages((prev) => [...prev, userMsg, aiPlaceholder]);
     setIsLoading(true);
 
-    // Persist user message immediately
-    persistMessages(nextMessages, currentSessionId, isFirstMessage ? q : undefined);
-
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
+    const timeout = setTimeout(() => controller.abort(), 120_000);
 
     try {
-      const res = await fetch(AI_API_URL, {
+      const res = await fetch(AI_STREAM_URL, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "application/json" },
@@ -221,24 +222,92 @@ export default function RecommendView() {
         throw new Error(`서버 오류 (${res.status}): ${text}`);
       }
 
-      const data: { answer: string; query_type: string; confidence: number } =
-        await res.json();
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let streamedText = "";
+      let queryType = "";
 
-      const aiMsg: Message = {
-        id: uuid(),
-        role: "ai",
-        content: data.answer,
-        query_type: data.query_type,
-      };
-      const finalMessages = [...nextMessages, aiMsg];
-      setMessages(finalMessages);
-      persistMessages(finalMessages, currentSessionId);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop()!;
+
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith("data: ")) continue;
+
+          let data: Record<string, unknown>;
+          try {
+            data = JSON.parse(line.slice(6));
+          } catch {
+            continue;
+          }
+
+          switch (data.event) {
+            case "classify":
+              queryType = data.query_type as string;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId ? { ...m, query_type: queryType } : m,
+                ),
+              );
+              break;
+
+            case "status":
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? { ...m, status: data.text as string, content: "" }
+                    : m,
+                ),
+              );
+              break;
+
+            case "token":
+              streamedText += data.text as string;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? { ...m, content: streamedText, status: undefined }
+                    : m,
+                ),
+              );
+              break;
+
+            case "done": {
+              const finalContent = data.answer as string | AiResponse;
+              queryType = (data.query_type as string) || queryType;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === aiMsgId
+                    ? {
+                        ...m,
+                        content: finalContent,
+                        query_type: queryType,
+                        status: undefined,
+                      }
+                    : m,
+                ),
+              );
+              refreshSessions();
+              break;
+            }
+
+            case "error":
+              throw new Error(data.message as string);
+          }
+        }
+      }
     } catch (err) {
       clearTimeout(timeout);
       const message =
         err instanceof Error
           ? err.name === "AbortError"
-            ? "응답 시간이 초과됐습니다. (30초)"
+            ? "응답 시간이 초과됐습니다. (120초)"
             : err.message.includes("Failed to fetch") ||
                 err.message.includes("NetworkError")
               ? "AI 서버에 연결할 수 없습니다. 서버 상태를 확인해주세요."
@@ -246,10 +315,11 @@ export default function RecommendView() {
           : "알 수 없는 오류가 발생했습니다.";
 
       toast.error(message);
-      const errMsg: Message = { id: uuid(), role: "ai", content: message };
-      const finalMessages = [...nextMessages, errMsg];
-      setMessages(finalMessages);
-      persistMessages(finalMessages, currentSessionId);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === aiMsgId ? { ...m, content: message, status: undefined } : m,
+        ),
+      );
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
@@ -388,7 +458,7 @@ export default function RecommendView() {
               msg.role === "user" ? (
                 <div key={msg.id} className="flex justify-end">
                   <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-violet-600 px-4 py-2.5 text-sm leading-relaxed text-white">
-                    {msg.content}
+                    {msg.content as string}
                   </div>
                 </div>
               ) : (
@@ -404,28 +474,31 @@ export default function RecommendView() {
                         {TYPE_BADGE[msg.query_type].label}
                       </span>
                     )}
-                    <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                      <span dangerouslySetInnerHTML={parseMarkdown(msg.content)} />
-                    </div>
+                    {msg.status ? (
+                      <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-500" />
+                          <span>{msg.status}</span>
+                        </div>
+                      </div>
+                    ) : typeof msg.content === "string" && msg.content === "" ? (
+                      <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3.5 dark:border-gray-700 dark:bg-gray-800">
+                        <div className="flex items-center gap-1">
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400 [animation-delay:-0.3s]" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400 [animation-delay:-0.15s]" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400" />
+                        </div>
+                      </div>
+                    ) : typeof msg.content === "string" ? (
+                      <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3 text-sm leading-relaxed text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                        <span dangerouslySetInnerHTML={parseMarkdown(msg.content)} />
+                      </div>
+                    ) : (
+                      <AiResponseRenderer response={msg.content} />
+                    )}
                   </div>
                 </div>
               ),
-            )}
-
-            {/* Typing indicator */}
-            {isLoading && (
-              <div className="flex items-start gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-950">
-                  <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
-                </div>
-                <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white px-4 py-3.5 dark:border-gray-700 dark:bg-gray-800">
-                  <div className="flex items-center gap-1">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400 [animation-delay:-0.3s]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400 [animation-delay:-0.15s]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400" />
-                  </div>
-                </div>
-              </div>
             )}
 
             <div ref={messagesEndRef} />

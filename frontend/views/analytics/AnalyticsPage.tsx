@@ -35,9 +35,16 @@ function getMonthAmount(sub: SubscriptionResponse, year: number, month: number):
   if (startDate > monthEnd) return 0;
 
   if (sub.billingCycle === "MONTHLY") {
-    const day = Math.min(sub.billingDayOfMonth ?? 1, new Date(year, month + 1, 0).getDate());
-    const billingDate = new Date(year, month, day);
-    return billingDate >= startDate ? sub.amount : 0;
+    const subMonth = new Date(sub.startDate);
+
+    if (
+      subMonth.getFullYear() > year ||
+      (subMonth.getFullYear() === year && subMonth.getMonth() > month)
+    ) {
+      return 0;
+    }
+
+    return sub.amount;
   }
 
   if (sub.billingCycle === "YEARLY") {
@@ -91,9 +98,7 @@ function buildMonths(period: Period, subs: SubscriptionResponse[]): MonthEntry[]
         return d < min ? d : min;
       }, new Date());
       const diff =
-        (currentYear - earliest.getFullYear()) * 12 +
-        (currentMonth - earliest.getMonth()) +
-        1;
+        (currentYear - earliest.getFullYear()) * 12 + (currentMonth - earliest.getMonth()) + 1;
       count = Math.max(diff, 1);
     }
   }
@@ -132,7 +137,6 @@ const PERIOD_TABS: { label: string; value: Period }[] = [
   { label: "전체", value: "all" },
 ];
 
-
 // ── Main Component ────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
@@ -141,10 +145,7 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("6m");
   const { resolvedTheme } = useTheme();
 
-  const activeSubs = useMemo(
-    () => allSubs.filter((s) => s.status === "ACTIVE"),
-    [allSubs],
-  );
+  const activeSubs = useMemo(() => allSubs.filter((s) => s.status === "ACTIVE"), [allSubs]);
 
   const primaryCurrency = useMemo(() => {
     const currencies = [...new Set(activeSubs.map((s) => s.currency))];
@@ -153,7 +154,7 @@ export default function AnalyticsPage() {
 
   const fmt = useCallback(
     (n: number) => formatAmount(Math.round(n), primaryCurrency),
-    [primaryCurrency],
+    [primaryCurrency]
   );
 
   // 현재 날짜 기준
@@ -163,10 +164,7 @@ export default function AnalyticsPage() {
   const lastMonthYear = todayMonth === 0 ? todayYear - 1 : todayYear;
 
   // 선택 기간 월 목록
-  const periodMonths = useMemo(
-    () => buildMonths(period, activeSubs),
-    [period, activeSubs],
-  );
+  const periodMonths = useMemo(() => buildMonths(period, activeSubs), [period, activeSubs]);
 
   // 전체 기간 월 목록 (누적 계산용)
   const allMonths = useMemo(() => buildMonths("all", activeSubs), [activeSubs]);
@@ -178,37 +176,37 @@ export default function AnalyticsPage() {
         label,
         amount: activeSubs.reduce((sum, sub) => sum + getMonthAmount(sub, year, month), 0),
       })),
-    [periodMonths, activeSubs],
+    [periodMonths, activeSubs]
   );
 
   // 이번 달 / 지난 달 합계
   const thisMonthTotal = useMemo(
     () => activeSubs.reduce((sum, sub) => sum + getMonthAmount(sub, todayYear, todayMonth), 0),
-    [activeSubs, todayYear, todayMonth],
+    [activeSubs, todayYear, todayMonth]
   );
   const lastMonthTotal = useMemo(
     () =>
       activeSubs.reduce((sum, sub) => sum + getMonthAmount(sub, lastMonthYear, lastMonthIndex), 0),
-    [activeSubs, lastMonthYear, lastMonthIndex],
+    [activeSubs, lastMonthYear, lastMonthIndex]
   );
 
   // 전체 월별 금액 배열
   const allMonthlyAmounts = useMemo(
     () =>
       allMonths.map(({ year, month }) =>
-        activeSubs.reduce((sum, sub) => sum + getMonthAmount(sub, year, month), 0),
+        activeSubs.reduce((sum, sub) => sum + getMonthAmount(sub, year, month), 0)
       ),
-    [allMonths, activeSubs],
+    [allMonths, activeSubs]
   );
 
   const totalCumulative = useMemo(
     () => allMonthlyAmounts.reduce((a, b) => a + b, 0),
-    [allMonthlyAmounts],
+    [allMonthlyAmounts]
   );
 
   const monthlyAvg = useMemo(
     () => (allMonthlyAmounts.length > 0 ? totalCumulative / allMonthlyAmounts.length : 0),
-    [totalCumulative, allMonthlyAmounts],
+    [totalCumulative, allMonthlyAmounts]
   );
 
   const vsLastMonth = thisMonthTotal - lastMonthTotal;
@@ -288,7 +286,7 @@ export default function AnalyticsPage() {
       }
       return String(Math.round(value));
     },
-    [primaryCurrency],
+    [primaryCurrency]
   );
 
   // ── Loading Skeleton ──
@@ -419,10 +417,7 @@ export default function AnalyticsPage() {
               <p className="py-16 text-center text-sm text-gray-400">데이터 없음</p>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart
-                  data={monthlyBarData}
-                  margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
-                >
+                <BarChart data={monthlyBarData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                   <XAxis
                     dataKey="label"
@@ -444,7 +439,9 @@ export default function AnalyticsPage() {
                       border: "1px solid #e5e7eb",
                       fontSize: 12,
                     }}
-                    cursor={{ fill: resolvedTheme === "dark" ? "rgba(124, 58, 237, 0.15)" : "#f5f3ff" }}
+                    cursor={{
+                      fill: resolvedTheme === "dark" ? "rgba(124, 58, 237, 0.15)" : "#f5f3ff",
+                    }}
                   />
                   <Bar dataKey="amount" fill="#7C3AED" radius={[4, 4, 0, 0]} maxBarSize={48} />
                 </BarChart>
@@ -523,11 +520,7 @@ export default function AnalyticsPage() {
                       <span className="w-5 shrink-0 text-center text-xs font-semibold text-gray-400">
                         {i + 1}
                       </span>
-                      <ServiceLogo
-                        name={sub.serviceName}
-                        logoDomain={svc?.logoDomain}
-                        size={28}
-                      />
+                      <ServiceLogo name={sub.serviceName} logoDomain={svc?.logoDomain} size={28} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
                           {sub.serviceName}

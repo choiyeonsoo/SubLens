@@ -101,6 +101,13 @@ public class Subscription {
     @Column(name = "notify_days_before", nullable = false)
     private short notifyDaysBefore = 3;
 
+    @Builder.Default
+    @Column(name = "is_bundle", nullable = false)
+    private boolean isBundle = false;
+
+    @Column(name = "bundle_id")
+    private UUID bundleId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

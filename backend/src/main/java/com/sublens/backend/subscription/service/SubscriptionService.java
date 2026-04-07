@@ -130,6 +130,8 @@ public class SubscriptionService {
                 .billingDateOfYear(request.getBillingDateOfYear())
                 .notifyBefore(request.isNotifyBefore())
                 .notifyDaysBefore((short) request.getNotifyDaysBefore())
+                .isBundle(request.isBundle())
+                .bundleId(request.getBundleId())
                 .build();
 
         @SuppressWarnings("null")
@@ -169,6 +171,8 @@ public class SubscriptionService {
         subscription.setBillingDateOfYear(request.getBillingDateOfYear());
         subscription.setNotifyBefore(request.isNotifyBefore());
         subscription.setNotifyDaysBefore((short) request.getNotifyDaysBefore());
+        subscription.setBundle(request.isBundle());
+        subscription.setBundleId(request.getBundleId());
 
         return SubscriptionResponse.from(subscription);
     }

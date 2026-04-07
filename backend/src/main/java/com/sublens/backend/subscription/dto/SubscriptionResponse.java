@@ -35,6 +35,8 @@ public class SubscriptionResponse {
     private Integer billingDayOfMonth;
     private Integer billingDayOfWeek;
     private String billingDateOfYear;
+    private boolean isBundle;
+    private UUID bundleId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -57,6 +59,8 @@ public class SubscriptionResponse {
                 s.getBillingDayOfMonth(),
                 s.getBillingDayOfWeek(),
                 s.getBillingDateOfYear(),
+                s.isBundle(),
+                s.getBundleId(),
                 s.getCreatedAt(),
                 s.getUpdatedAt());
     }

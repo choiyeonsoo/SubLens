@@ -5,3 +5,6 @@ psycopg2-binary
 redis
 python-dotenv
 pydantic
+pypdf
+sentence-transformers
+chromadb
